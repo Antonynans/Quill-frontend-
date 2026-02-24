@@ -1,0 +1,47 @@
+import { Wallet } from "@/types/wallet";
+
+export const walletsData: Wallet[] = [
+  {
+    currency: "NGN",
+    flag: "/icons/ngn-flag.svg",
+    balance: "N5,280.50",
+    maskedBalance: "N****",
+    kyc: "KYC Level 1",
+    textColor: "#007BFF",
+    bgColor: "#D9EBFF",
+    account: "****95403",
+    icon: "kyc",
+  },
+  {
+    currency: "USD",
+    flag: "/icons/usd-flag.svg",
+    balance: "$3,150.00",
+    maskedBalance: "$****",
+    kyc: "KYC Level 2",
+    textColor: "#009387",
+    bgColor: "#E6F9F8",
+    account: "****95403",
+    icon: "kyc",
+  },
+  {
+    currency: "GBP",
+    flag: "/icons/gbp-flag.svg",
+    balance: "£5,280.50",
+    maskedBalance: "£****",
+    kyc: "KYC Level 2",
+    textColor: "#009387",
+    bgColor: "#E6F9F8",
+    account: "****95403",
+    icon: "kyc",
+  },
+  {
+    currency: "EUR",
+    flag: "/icons/eur-flag.svg",
+    balance: "€4,900.75",
+    maskedBalance: "€****",
+    kyc: "Verified",
+    textColor: "#007BFF",
+    account: "****95403",
+    icon: "verified",
+  },
+];
