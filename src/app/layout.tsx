@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
 import "./globals.css";
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-poppins",
-});
+import { AuthWrapper } from "@/components/AuthWrapper";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export const metadata: Metadata = {
-  title: "AlocerPay Dashboard",
-  description: "Financial dashboard",
+  title: "Quill - Organize Your Developer Notes",
+  description:
+    "A beautiful notes app for developers to organize and manage notes by skills",
+  viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({
@@ -19,8 +17,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={poppins.variable}>
-      <body className="font-poppins">{children}</body>
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
+      <body>
+        <AuthWrapper>
+          <ToastContainer />
+          {children}
+        </AuthWrapper>
+      </body>
     </html>
   );
 }
