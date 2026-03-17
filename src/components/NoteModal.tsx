@@ -170,7 +170,7 @@ export function NoteModal({
                   }
                 }
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent"
             />
           </div>
 
@@ -184,7 +184,7 @@ export function NoteModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Note title"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent"
               required
             />
           </div>
@@ -199,7 +199,7 @@ export function NoteModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Write your note here..."
               rows={8}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent resize-none"
               required
             />
           </div>
@@ -254,7 +254,7 @@ export function NoteModal({
               type="datetime-local"
               value={reminderAt}
               onChange={(e) => setReminderAt(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent"
             />
             {reminderAt && (
               <button

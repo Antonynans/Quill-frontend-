@@ -43,18 +43,18 @@ export function NoteCard({
   const { deleteNote, togglePin } = useNotesStore();
 
   useEffect(() => {
+    if (!showMenu) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowMenu(false);
       }
     };
 
-    if (showMenu) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [showMenu]);
 
   const handleDelete = () => {
