@@ -118,15 +118,23 @@ export default function LoginPage() {
               <div className="flex-1 h-px bg-gray-300"></div>
             </div>
 
-            <p className="text-center text-sm text-gray-600">
-              Not registered?{" "}
+            <div className="text-center space-y-2">
               <Link
-                href="/auth/signup"
-                className="text-orange-600 font-bold hover:text-orange-700"
+                href="/auth/forgot-password"
+                className="text-sm text-orange-600 hover:text-orange-700 block"
               >
-                Sign up here
+                Forgot Password?
               </Link>
-            </p>
+              <p className="text-sm text-gray-600">
+                Not registered?{" "}
+                <Link
+                  href="/auth/signup"
+                  className="text-orange-600 font-bold hover:text-orange-700"
+                >
+                  Sign up here
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>
