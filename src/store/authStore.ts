@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthStore>()(
           set({ token: access_token });
           axios.defaults.headers.common["Authorization"] =
             `Bearer ${access_token}`;
-         
+
           const userResponse = await axios.get(`${API_URL}/api/auth/me`);
           set({ user: userResponse.data, isLoading: false });
         } catch (error) {
@@ -45,20 +45,77 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      signup: async (email: string, password: string) => {
+      signup: async (email: string, password: string, fullName?: string) => {
         set({ isLoading: true });
         try {
-          const response = await axios.post(`${API_URL}/api/auth/signup`, {
+          await axios.post(`${API_URL}/api/auth/signup`, {
             email,
             password,
+            full_name: fullName || "",
           });
+          set({ isLoading: false });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      verifyEmailToken: async (token: string) => {
+        set({ isLoading: true });
+        try {
+          const response = await axios.post(
+            `${API_URL}/api/auth/verify-email`,
+            {
+              token,
+            },
+          );
           const { access_token } = response.data;
           set({ token: access_token });
           axios.defaults.headers.common["Authorization"] =
             `Bearer ${access_token}`;
-         
+
           const userResponse = await axios.get(`${API_URL}/api/auth/me`);
           set({ user: userResponse.data, isLoading: false });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      resendVerification: async (email: string) => {
+        set({ isLoading: true });
+        try {
+          await axios.post(`${API_URL}/api/auth/resend-verification`, {
+            email,
+          });
+          set({ isLoading: false });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      forgotPassword: async (email: string) => {
+        set({ isLoading: true });
+        try {
+          await axios.post(`${API_URL}/api/auth/forgot-password`, {
+            email,
+          });
+          set({ isLoading: false });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      resetPassword: async (token: string, newPassword: string) => {
+        set({ isLoading: true });
+        try {
+          await axios.post(`${API_URL}/api/auth/reset-password`, {
+            token,
+            new_password: newPassword,
+          });
+          set({ isLoading: false });
         } catch (error) {
           set({ isLoading: false });
           throw error;
@@ -78,11 +135,10 @@ export const useAuthStore = create<AuthStore>()(
         user: state.user,
       }),
       onRehydrateStorage: () => (state) => {
-       
         if (state?.token) {
           axios.defaults.headers.common["Authorization"] =
             `Bearer ${state.token}`;
-         
+
           axios
             .get(`${API_URL}/api/auth/me`)
             .then((response) => {
@@ -90,7 +146,7 @@ export const useAuthStore = create<AuthStore>()(
             })
             .catch((error) => {
               console.error("Failed to fetch user on rehydration:", error);
-             
+
               state.logout();
             });
         }
