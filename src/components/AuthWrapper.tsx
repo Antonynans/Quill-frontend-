@@ -10,7 +10,13 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
   const { token } = useAuthStore();
   const [isHydrated, setIsHydrated] = useState(false);
 
-  const publicRoutes = ["/auth/login", "/auth/signup"];
+  const publicRoutes = [
+    "/auth/login",
+    "/auth/signup",
+    "/auth/verify-email",
+    "/auth/forgot-password",
+    "/auth/reset-password",
+  ];
 
   useEffect(() => {
     setIsHydrated(true);
