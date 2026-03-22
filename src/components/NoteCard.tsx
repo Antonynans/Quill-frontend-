@@ -121,7 +121,7 @@ export function NoteCard({
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
             >
               <FiMoreVertical size={16} className="text-gray-600" />
             </button>
@@ -172,25 +172,28 @@ export function NoteCard({
           </p>
         </div>
 
-        {note.tags && note.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
+        
+
+        <div className="flex lg:items-center lg:flex-row flex-col justify-between text-xs text-gray-500 border-t pt-3 gap-4">
+          {note.tags && note.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 lg:w-full">
             {note.tags.map((tag, index) => (
               <span
                 key={index}
-                className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md"
+                className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md line-clamp-1"
               >
                 {tag}
               </span>
             ))}
           </div>
         )}
-
-        <div className="flex items-center justify-end text-xs text-gray-500 border-t pt-3">
-          <span>
-            {note.updated_at
-              ? `Updated ${formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })}`
+         <div className="lg:flex justify-end w-full">
+           <span>
+            {note.edited_at
+              ? `Edited ${formatDistanceToNow(new Date(note.edited_at), { addSuffix: true })}`
               : `Created ${formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}`}
           </span>
+         </div>
         </div>
       </div>
     </>
