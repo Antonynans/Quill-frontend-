@@ -21,6 +21,16 @@ const getColourClass = (col: string) => {
   return colourMap[col] || "bg-gray-100 text-gray-900 border border-gray-300";
 };
 
+const getNowLocal = () => {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const hh = String(now.getHours()).padStart(2, "0");
+  const min = String(now.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+};
+
 interface NoteModalProps {
   note: Note;
   isOpen: boolean;
@@ -248,6 +258,7 @@ export function NoteModal({
               type="datetime-local"
               value={reminderAt}
               onChange={(e) => setReminderAt(e.target.value)}
+              min={getNowLocal()}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-transparent"
             />
             {reminderAt && (
@@ -260,6 +271,7 @@ export function NoteModal({
               </button>
             )}
           </div>
+
           <div className="flex items-center justify-end text-xs text-gray-500 border-t pt-3">
             <span>
               {note?.edited_at
