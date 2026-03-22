@@ -63,19 +63,10 @@ export const useAuthStore = create<AuthStore>()(
       verifyEmailToken: async (token: string) => {
         set({ isLoading: true });
         try {
-          const response = await axios.post(
-            `${API_URL}/api/auth/verify-email`,
-            {
-              token,
-            },
-          );
-          const { access_token } = response.data;
-          set({ token: access_token });
-          axios.defaults.headers.common["Authorization"] =
-            `Bearer ${access_token}`;
-
-          const userResponse = await axios.get(`${API_URL}/api/auth/me`);
-          set({ user: userResponse.data, isLoading: false });
+          await axios.get(`${API_URL}/api/auth/verify-email`, {
+            params: { token },
+          });
+          set({ isLoading: false });
         } catch (error) {
           set({ isLoading: false });
           throw error;
