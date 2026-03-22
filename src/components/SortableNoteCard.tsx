@@ -37,11 +37,10 @@ export function SortableNoteCard({
 
   return (
     <div ref={setNodeRef} style={style} className="relative">
-      {/* Drag Handle */}
       <div
         {...attributes}
         {...listeners}
-        className="absolute top-3 right-12 p-1.5 hover:bg-gray-200 rounded-lg cursor-grab active:cursor-grabbing z-20 transition-colors"
+        className="absolute top-4 lg:right-14 right-10 p-1.5 hover:bg-gray-200 rounded-lg cursor-grab active:cursor-grabbing z-20 transition-colors"
         title="Drag to reorder"
       >
         <MdDragIndicator size={18} className="text-gray-500" />
