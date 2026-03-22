@@ -1,117 +1,24 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import axios from "axios";
-import { AuthStore } from "@/types";
-import { API_URL } from "./constant";
+import { User } from "@/types";
 
-export const useAuthStore = create<AuthStore>()(
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  setUser: (user: User | null) => void;
+  setToken: (token: string | null) => void;
+  logout: () => void;
+}
+
+export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
       token: null,
-      isLoading: false,
 
       setUser: (user) => set({ user }),
       setToken: (token) => set({ token }),
-
-      fetchUser: async () => {
-        try {
-          const response = await axios.get(`${API_URL}/api/auth/me`);
-          set({ user: response.data, isLoading: false });
-        } catch (error) {
-          console.error("Failed to fetch user:", error);
-          set({ user: null, isLoading: false });
-          throw error;
-        }
-      },
-
-      login: async (email: string, password: string) => {
-        set({ isLoading: true });
-        try {
-          const response = await axios.post(`${API_URL}/api/auth/login`, {
-            email,
-            password,
-          });
-          const { access_token } = response.data;
-          set({ token: access_token });
-          axios.defaults.headers.common["Authorization"] =
-            `Bearer ${access_token}`;
-
-          const userResponse = await axios.get(`${API_URL}/api/auth/me`);
-          set({ user: userResponse.data, isLoading: false });
-        } catch (error) {
-          set({ isLoading: false });
-          throw error;
-        }
-      },
-
-      signup: async (email: string, password: string, fullName?: string) => {
-        set({ isLoading: true });
-        try {
-          await axios.post(`${API_URL}/api/auth/signup`, {
-            email,
-            password,
-            full_name: fullName || "",
-          });
-          set({ isLoading: false });
-        } catch (error) {
-          set({ isLoading: false });
-          throw error;
-        }
-      },
-
-      verifyEmailToken: async (token: string) => {
-        set({ isLoading: true });
-        try {
-          await axios.get(`${API_URL}/api/auth/verify-email`, {
-            params: { token },
-          });
-          set({ isLoading: false });
-        } catch (error) {
-          set({ isLoading: false });
-          throw error;
-        }
-      },
-
-      resendVerification: async (email: string) => {
-        set({ isLoading: true });
-        try {
-          await axios.post(`${API_URL}/api/auth/resend-verification`, {
-            email,
-          });
-          set({ isLoading: false });
-        } catch (error) {
-          set({ isLoading: false });
-          throw error;
-        }
-      },
-
-      forgotPassword: async (email: string) => {
-        set({ isLoading: true });
-        try {
-          await axios.post(`${API_URL}/api/auth/forgot-password`, {
-            email,
-          });
-          set({ isLoading: false });
-        } catch (error) {
-          set({ isLoading: false });
-          throw error;
-        }
-      },
-
-      resetPassword: async (token: string, newPassword: string) => {
-        set({ isLoading: true });
-        try {
-          await axios.post(`${API_URL}/api/auth/reset-password`, {
-            token,
-            new_password: newPassword,
-          });
-          set({ isLoading: false });
-        } catch (error) {
-          set({ isLoading: false });
-          throw error;
-        }
-      },
 
       logout: () => {
         set({ user: null, token: null });
@@ -129,17 +36,6 @@ export const useAuthStore = create<AuthStore>()(
         if (state?.token) {
           axios.defaults.headers.common["Authorization"] =
             `Bearer ${state.token}`;
-
-          axios
-            .get(`${API_URL}/api/auth/me`)
-            .then((response) => {
-              state.setUser(response.data);
-            })
-            .catch((error) => {
-              console.error("Failed to fetch user on rehydration:", error);
-
-              state.logout();
-            });
         }
       },
     },
