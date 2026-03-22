@@ -1,4 +1,3 @@
-// User and Auth types
 export interface User {
   id: number;
   email: string;
@@ -13,7 +12,6 @@ export interface AuthResponse {
   user?: User;
 }
 
-// Note types
 export interface Note {
   id: number;
   title: string;
@@ -30,8 +28,9 @@ export interface Note {
   reminder_at: string | null;
   reminder_sent: boolean;
   owner_id: number;
+  edited_at?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface CreateNotePayload {
@@ -51,7 +50,6 @@ export interface UpdateNotePayload {
   position?: number;
 }
 
-// Store types
 export interface AuthStore {
   user: User | null;
   token: string | null;
@@ -79,6 +77,7 @@ export interface NotesStore {
   } | null;
   isLoading: boolean;
   fetchNotes: (
+    page?: number,
     search?: string,
     colour?: string,
     tag?: string,
