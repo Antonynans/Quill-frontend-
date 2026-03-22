@@ -5,6 +5,7 @@ import { useNotesStore } from "@/store/notesStore";
 import { useState, useEffect } from "react";
 import { FiX } from "react-icons/fi";
 import { toast } from "react-toastify";
+import { formatDistanceToNow } from "date-fns";
 
 const getColourClass = (col: string) => {
   const colourMap: Record<string, string> = {
@@ -21,7 +22,7 @@ const getColourClass = (col: string) => {
 };
 
 interface NoteModalProps {
-  note?: Note | null;
+  note: Note;
   isOpen: boolean;
   onClose: () => void;
   mode: "create" | "edit";
@@ -115,7 +116,6 @@ export function NoteModal({
         className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold">
             {mode === "create" && "New Note"}
@@ -129,9 +129,7 @@ export function NoteModal({
           </button>
         </div>
 
-        {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Tags Selection */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Tags
@@ -174,7 +172,6 @@ export function NoteModal({
             />
           </div>
 
-          {/* Title */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Title
@@ -189,7 +186,6 @@ export function NoteModal({
             />
           </div>
 
-          {/* Description */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Description
@@ -204,7 +200,6 @@ export function NoteModal({
             />
           </div>
 
-          {/* Colour */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Colour
@@ -237,7 +232,6 @@ export function NoteModal({
             </div>
           </div>
 
-          {/* Reminder */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Reminder (Optional)
@@ -266,8 +260,16 @@ export function NoteModal({
               </button>
             )}
           </div>
+          <div className="flex items-center justify-end text-xs text-gray-500 border-t pt-3">
+            <span>
+              {note?.edited_at
+                ? `Edited ${formatDistanceToNow(new Date(note.edited_at), { addSuffix: true })}`
+                : note?.created_at
+                  ? `Created ${formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}`
+                  : ""}
+            </span>
+          </div>
 
-          {/* Actions */}
           <div className="flex gap-3 pt-4 border-t">
             <button
               type="button"
