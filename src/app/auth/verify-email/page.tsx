@@ -2,47 +2,42 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { useVerifyEmail, useResendVerification } from "@/hooks/useAuth";
 import Link from "next/link";
 import { FiMail, FiAlertCircle, FiCheckCircle, FiLoader } from "react-icons/fi";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { verifyEmailToken, resendVerification, isLoading } = useAuthStore();
+  const { mutateAsync: verifyEmail } = useVerifyEmail();
+  const { mutateAsync: resendVerification, isPending: isResending } = useResendVerification();
 
-  const [status, setStatus] = useState<
-    "idle" | "verifying" | "success" | "error"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | "verifying" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [email, setEmail] = useState("");
-
   const hasAttempted = useRef(false);
 
   const handleVerification = useCallback(
     async (token: string) => {
       setStatus("verifying");
       try {
-        await verifyEmailToken(token);
+        await verifyEmail(token);
         setStatus("success");
-        setTimeout(() => router.push("/"), 2000);
+        setTimeout(() => router.push("/auth/login"), 2000);
       } catch (err: any) {
         setErrorMessage(
-          err.response?.data?.detail ||
-            "Verification failed. The link may be invalid or expired.",
+          err.response?.data?.detail || "Verification failed. The link may be invalid or expired.",
         );
         setStatus("error");
       }
     },
-    [verifyEmailToken, router],
+    [verifyEmail, router],
   );
 
   useEffect(() => {
     const token = searchParams.get("token");
     const emailParam = searchParams.get("email");
-
     if (emailParam) setEmail(emailParam);
-
     if (token && !hasAttempted.current) {
       hasAttempted.current = true;
       handleVerification(token);
@@ -55,18 +50,13 @@ export default function VerifyEmailPage() {
       setStatus("error");
       return;
     }
-
     setErrorMessage("");
     setStatus("idle");
-
     try {
       await resendVerification(email);
       setStatus("success");
     } catch (err: any) {
-      setErrorMessage(
-        err.response?.data?.detail ||
-          "Failed to resend email. Please try again.",
-      );
+      setErrorMessage(err.response?.data?.detail || "Failed to resend email. Please try again.");
       setStatus("error");
     }
   };
@@ -97,31 +87,23 @@ export default function VerifyEmailPage() {
             </div>
 
             <h2 className="text-2xl font-bold text-center text-slate-800 mb-2">
-              {status === "verifying"
-                ? "Verifying..."
-                : status === "success"
-                  ? "Email Verified!"
-                  : status === "error"
-                    ? "Verification Failed"
-                    : "Check Your Email"}
+              {status === "verifying" ? "Verifying..."
+                : status === "success" ? "Email Verified!"
+                : status === "error" ? "Verification Failed"
+                : "Check Your Email"}
             </h2>
 
             <p className="text-center text-gray-600 mb-6">
-              {status === "verifying"
-                ? "Please wait while we verify your email address."
-                : status === "success"
-                  ? "Your email has been verified. Redirecting you to login..."
-                  : status === "error"
-                    ? "Something went wrong. See below for details."
-                    : "Click the verification link in your email to continue."}
+              {status === "verifying" ? "Please wait while we verify your email address."
+                : status === "success" ? "Your email has been verified. Redirecting to login..."
+                : status === "error" ? "Something went wrong. See below for details."
+                : "Click the verification link in your email to continue."}
             </p>
 
             {status === "success" && (
               <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3 text-green-700">
                 <FiCheckCircle className="mt-0.5 flex-shrink-0" size={18} />
-                <p className="text-sm">
-                  Email verified successfully! Redirecting...
-                </p>
+                <p className="text-sm">Email verified successfully! Redirecting...</p>
               </div>
             )}
 
@@ -134,9 +116,7 @@ export default function VerifyEmailPage() {
 
             {(status === "idle" || status === "error") && (
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-4">
-                  Didn&apos;t receive the email?
-                </p>
+                <p className="text-sm text-gray-600 mb-4">Didn&apos;t receive the email?</p>
                 <div className="space-y-3">
                   <input
                     type="email"
@@ -147,20 +127,17 @@ export default function VerifyEmailPage() {
                   />
                   <button
                     onClick={handleResend}
-                    disabled={isLoading || !email}
+                    disabled={isResending || !email}
                     className="w-full py-3 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading ? "Sending..." : "Resend Verification Email"}
+                    {isResending ? "Sending..." : "Resend Verification Email"}
                   </button>
                 </div>
               </div>
             )}
 
             <div className="mt-6 text-center">
-              <Link
-                href="/auth/signup"
-                className="text-sm text-gray-600 hover:text-gray-800"
-              >
+              <Link href="/auth/signup" className="text-sm text-gray-600 hover:text-gray-800">
                 ← Back to Sign Up
               </Link>
             </div>

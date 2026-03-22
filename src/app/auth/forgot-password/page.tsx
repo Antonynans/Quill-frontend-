@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useAuthStore } from "@/store/authStore";
+import { useForgotPassword } from "@/hooks/useAuth";
 import Link from "next/link";
 import { FiMail, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
 
 export default function ForgotPasswordPage() {
-  const { forgotPassword, isLoading } = useAuthStore();
+  const { mutateAsync: forgotPassword, isPending } = useForgotPassword();
 
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -26,10 +26,7 @@ export default function ForgotPasswordPage() {
       await forgotPassword(email);
       setSuccess("If that email exists, a password reset link has been sent.");
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-          "Failed to send reset email. Please try again.",
-      );
+      setError(err.response?.data?.detail || "Failed to send reset email. Please try again.");
     }
   };
 
@@ -41,9 +38,7 @@ export default function ForgotPasswordPage() {
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
               <FiMail className="text-3xl text-orange-600" />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">
-              Forgot Password
-            </h1>
+            <h1 className="text-2xl font-bold text-white mb-2">Forgot Password</h1>
             <p className="text-orange-100">Reset your password</p>
           </div>
 
@@ -52,12 +47,9 @@ export default function ForgotPasswordPage() {
               <div className="text-6xl">🔐</div>
             </div>
 
-            <h2 className="text-2xl font-bold text-center text-slate-800 mb-2">
-              Reset Password
-            </h2>
+            <h2 className="text-2xl font-bold text-center text-slate-800 mb-2">Reset Password</h2>
             <p className="text-center text-gray-600 mb-6">
-              Enter your email address and we&apos;ll send you a link to reset
-              your password.
+              Enter your email address and we&apos;ll send you a link to reset your password.
             </p>
 
             {success && (
@@ -76,14 +68,9 @@ export default function ForgotPasswordPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
                 <div className="relative">
-                  <FiMail
-                    className="absolute left-4 top-3 text-gray-400"
-                    size={20}
-                  />
+                  <FiMail className="absolute left-4 top-3 text-gray-400" size={20} />
                   <input
                     type="email"
                     value={email}
@@ -97,18 +84,15 @@ export default function ForgotPasswordPage() {
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isPending}
                 className="w-full py-3 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Sending..." : "Send Reset Link"}
+                {isPending ? "Sending..." : "Send Reset Link"}
               </button>
             </form>
 
             <div className="mt-6 text-center">
-              <Link
-                href="/auth/login"
-                className="text-sm text-gray-600 hover:text-gray-800"
-              >
+              <Link href="/auth/login" className="text-sm text-gray-600 hover:text-gray-800">
                 ← Back to Login
               </Link>
             </div>

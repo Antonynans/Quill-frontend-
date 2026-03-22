@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuthStore } from "@/store/authStore";
+import { useLogout } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { FiMenu, FiLogOut, FiTrash2, FiUser, FiSettings } from "react-icons/fi";
 import { useState, useRef, useEffect } from "react";
@@ -11,7 +12,8 @@ interface HeaderProps {
 }
 
 export function Header({ onTrashClick }: HeaderProps) {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
+  const logout = useLogout();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);

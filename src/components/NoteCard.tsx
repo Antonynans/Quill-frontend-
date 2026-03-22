@@ -4,7 +4,7 @@ import { Note } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import { FiMoreVertical, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { useState, useEffect, useRef } from "react";
-import { useNotesStore } from "@/store/notesStore";
+import { useDeleteNote, useTogglePin } from "@/hooks/useNotes";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { toast } from "react-toastify";
 
@@ -29,66 +29,44 @@ interface NoteCardProps {
   onNotesChange?: () => void;
 }
 
-export function NoteCard({
-  note,
-  onEdit,
-  onView,
-  onNotesChange,
-}: NoteCardProps) {
+export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
   const [showMenu, setShowMenu] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { deleteNote, togglePin } = useNotesStore();
+
+  const { mutate: deleteNote, isPending: isDeleting } = useDeleteNote();
+  const { mutate: togglePin, isPending: isPinning } = useTogglePin();
+  const isLoading = isDeleting || isPinning;
 
   useEffect(() => {
     if (!showMenu) return;
-
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowMenu(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showMenu]);
 
-  const handleDelete = () => {
-    setShowDeleteConfirm(true);
+  const handleDeleteConfirm = () => {
+    deleteNote(note.id, {
+      onSuccess: () => {
+        toast.success("Note deleted");
+        setShowDeleteConfirm(false);
+      },
+      onError: () => toast.error("Failed to delete note"),
+    });
   };
 
-  const handleDeleteConfirm = async () => {
-    try {
-      setIsLoading(true);
-      await deleteNote(note.id);
-      toast.success("Note deleted successfully");
-      setShowDeleteConfirm(false);
-      onNotesChange?.();
-    } catch (error) {
-      console.error("Failed to delete note:", error);
-      toast.error("Failed to delete note");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleTogglePin = async () => {
-    try {
-      setIsLoading(true);
-      await togglePin(note.id);
-      setShowMenu(false);
-      toast.success(note.is_pinned ? "Note unpinned" : "Note pinned");
-      onNotesChange?.();
-    } catch (error) {
-      console.error("Failed to toggle pin:", error);
-      toast.error("Failed to toggle pin");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleTogglePin = () => {
+    togglePin(note.id, {
+      onSuccess: () => {
+        toast.success(note.is_pinned ? "Note unpinned" : "Note pinned");
+        setShowMenu(false);
+      },
+      onError: () => toast.error("Failed to toggle pin"),
+    });
   };
 
   return (
@@ -97,7 +75,7 @@ export function NoteCard({
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleDeleteConfirm}
-        isLoading={isLoading}
+        isLoading={isDeleting}
         title="Delete Note"
         message="Are you sure you want to delete this note? It will be moved to trash."
         confirmText="Delete"
@@ -129,10 +107,7 @@ export function NoteCard({
             {showMenu && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-40 animate-fade-in">
                 <button
-                  onClick={() => {
-                    onEdit(note);
-                    setShowMenu(false);
-                  }}
+                  onClick={() => { onEdit(note); setShowMenu(false); }}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 transition-colors"
                 >
                   <FiEdit2 size={16} />
@@ -144,14 +119,12 @@ export function NoteCard({
                   disabled={isLoading}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 transition-colors disabled:opacity-50"
                 >
-                  <span className="text-base">
-                    {note.is_pinned ? "📌" : "📍"}
-                  </span>
+                  <span className="text-base">{note.is_pinned ? "📌" : "📍"}</span>
                   <span>{note.is_pinned ? "Unpin" : "Pin"}</span>
                 </button>
 
                 <button
-                  onClick={handleDelete}
+                  onClick={() => { setShowDeleteConfirm(true); setShowMenu(false); }}
                   disabled={isLoading}
                   className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2 transition-colors border-t border-gray-200 disabled:opacity-50"
                 >

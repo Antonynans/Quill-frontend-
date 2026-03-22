@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { useResetPassword } from "@/hooks/useAuth";
 import Link from "next/link";
 import { FiLock, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { resetPassword, isLoading } = useAuthStore();
+  const { mutateAsync: resetPassword, isPending } = useResetPassword();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,28 +35,21 @@ export default function ResetPasswordPage() {
       setError("Please fill in all fields");
       return;
     }
-
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
-
     if (password.length < 6) {
       setError("Password must be at least 6 characters");
       return;
     }
 
     try {
-      await resetPassword(token, password);
+      await resetPassword({ token, newPassword: password });
       setSuccess("Password reset successfully! Redirecting to login...");
-      setTimeout(() => {
-        router.push("/auth/login");
-      }, 2000);
+      setTimeout(() => router.push("/auth/login"), 2000);
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail ||
-          "Failed to reset password. Please try again.",
-      );
+      setError(err.response?.data?.detail || "Failed to reset password. Please try again.");
     }
   };
 
@@ -68,9 +61,7 @@ export default function ResetPasswordPage() {
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
               <FiLock className="text-3xl text-orange-600" />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">
-              Reset Password
-            </h1>
+            <h1 className="text-2xl font-bold text-white mb-2">Reset Password</h1>
             <p className="text-orange-100">Enter your new password</p>
           </div>
 
@@ -79,9 +70,7 @@ export default function ResetPasswordPage() {
               <div className="text-6xl">🔑</div>
             </div>
 
-            <h2 className="text-2xl font-bold text-center text-slate-800 mb-2">
-              New Password
-            </h2>
+            <h2 className="text-2xl font-bold text-center text-slate-800 mb-2">New Password</h2>
             <p className="text-center text-gray-600 mb-6">
               Choose a strong password for your account.
             </p>
@@ -102,14 +91,9 @@ export default function ResetPasswordPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  New Password
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
                 <div className="relative">
-                  <FiLock
-                    className="absolute left-4 top-3 text-gray-400"
-                    size={20}
-                  />
+                  <FiLock className="absolute left-4 top-3 text-gray-400" size={20} />
                   <input
                     type="password"
                     value={password}
@@ -122,14 +106,9 @@ export default function ResetPasswordPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Confirm Password
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm Password</label>
                 <div className="relative">
-                  <FiLock
-                    className="absolute left-4 top-3 text-gray-400"
-                    size={20}
-                  />
+                  <FiLock className="absolute left-4 top-3 text-gray-400" size={20} />
                   <input
                     type="password"
                     value={confirmPassword}
@@ -143,24 +122,18 @@ export default function ResetPasswordPage() {
 
               <button
                 type="submit"
-                disabled={isLoading || !token}
+                disabled={isPending || !token}
                 className="w-full py-3 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Resetting..." : "Reset Password"}
+                {isPending ? "Resetting..." : "Reset Password"}
               </button>
             </form>
 
             <div className="mt-6 text-center space-y-2">
-              <Link
-                href="/auth/login"
-                className="text-sm text-gray-600 hover:text-gray-800 block"
-              >
+              <Link href="/auth/login" className="text-sm text-gray-600 hover:text-gray-800 block">
                 ← Back to Login
               </Link>
-              <Link
-                href="/auth/forgot-password"
-                className="text-sm text-orange-600 hover:text-orange-700 block"
-              >
+              <Link href="/auth/forgot-password" className="text-sm text-orange-600 hover:text-orange-700 block">
                 Request New Reset Link
               </Link>
             </div>

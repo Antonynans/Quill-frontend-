@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { useLogin } from "@/hooks/useAuth";
 import Link from "next/link";
 import { FiMail, FiLock, FiAlertCircle } from "react-icons/fi";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading } = useAuthStore();
+  const { mutateAsync: login, isPending } = useLogin();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,12 +24,10 @@ export default function LoginPage() {
     }
 
     try {
-      await login(email, password);
+      await login({ email, password });
       router.push("/");
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail || "Login failed. Please try again.",
-      );
+      setError(err.response?.data?.detail || "Login failed. Please try again.");
     }
   };
 
@@ -50,9 +48,7 @@ export default function LoginPage() {
               <div className="text-6xl">📚</div>
             </div>
 
-            <h2 className="text-2xl font-bold text-center text-slate-800 mb-2">
-              Log In
-            </h2>
+            <h2 className="text-2xl font-bold text-center text-slate-800 mb-2">Log In</h2>
             <p className="text-center text-gray-600 mb-6">
               Welcome back! Please log in to your account.
             </p>
@@ -70,10 +66,7 @@ export default function LoginPage() {
                   Email Address
                 </label>
                 <div className="relative">
-                  <FiMail
-                    className="absolute left-4 top-3 text-gray-400"
-                    size={20}
-                  />
+                  <FiMail className="absolute left-4 top-3 text-gray-400" size={20} />
                   <input
                     type="email"
                     value={email}
@@ -89,10 +82,7 @@ export default function LoginPage() {
                   Password
                 </label>
                 <div className="relative">
-                  <FiLock
-                    className="absolute left-4 top-3 text-gray-400"
-                    size={20}
-                  />
+                  <FiLock className="absolute left-4 top-3 text-gray-400" size={20} />
                   <input
                     type="password"
                     value={password}
@@ -105,10 +95,10 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isPending}
                 className="w-full py-3 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Logging In..." : "Log In"}
+                {isPending ? "Logging In..." : "Log In"}
               </button>
             </form>
 
@@ -120,19 +110,13 @@ export default function LoginPage() {
 
             <div className="text-center space-y-2">
               <div className="flex justify-center">
-                <Link
-                href="/auth/forgot-password"
-                className="text-sm text-orange-600 hover:text-orange-700 block"
-              >
-                Forgot Password?
-              </Link>
+                <Link href="/auth/forgot-password" className="text-sm text-orange-600 hover:text-orange-700 block">
+                  Forgot Password?
+                </Link>
               </div>
               <p className="text-sm text-gray-600">
                 Not registered?{" "}
-                <Link
-                  href="/auth/signup"
-                  className="text-orange-600 font-bold hover:text-orange-700"
-                >
+                <Link href="/auth/signup" className="text-orange-600 font-bold hover:text-orange-700">
                   Sign up here
                 </Link>
               </p>

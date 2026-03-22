@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { useSignup } from "@/hooks/useAuth";
 import Link from "next/link";
 import { FiMail, FiLock, FiAlertCircle } from "react-icons/fi";
 
 export default function SignupPage() {
   const router = useRouter();
-  const { signup, isLoading } = useAuthStore();
+  const { mutateAsync: signup, isPending } = useSignup();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,12 +36,10 @@ export default function SignupPage() {
     }
 
     try {
-      await signup(email, password, fullName);
+      await signup({ email, password, fullName });
       router.push("/auth/verify-email");
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail || "Signup failed. Please try again.",
-      );
+      setError(err.response?.data?.detail || "Signup failed. Please try again.");
     }
   };
 
@@ -62,9 +60,7 @@ export default function SignupPage() {
               <div className="text-6xl">📝</div>
             </div>
 
-            <h2 className="text-2xl font-bold text-center text-slate-800 mb-2">
-              Sign Up
-            </h2>
+            <h2 className="text-2xl font-bold text-center text-slate-800 mb-2">Sign Up</h2>
             <p className="text-center text-gray-600 mb-6">
               Create your account and start organizing notes.
             </p>
@@ -78,14 +74,9 @@ export default function SignupPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
                 <div className="relative">
-                  <FiMail
-                    className="absolute left-4 top-3 text-gray-400"
-                    size={20}
-                  />
+                  <FiMail className="absolute left-4 top-3 text-gray-400" size={20} />
                   <input
                     type="email"
                     value={email}
@@ -98,29 +89,21 @@ export default function SignupPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Full Name{" "}
-                  <span className="text-gray-400 font-normal">(optional)</span>
+                  Full Name <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="John Doe"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="John Doe"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Password
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
                 <div className="relative">
-                  <FiLock
-                    className="absolute left-4 top-3 text-gray-400"
-                    size={20}
-                  />
+                  <FiLock className="absolute left-4 top-3 text-gray-400" size={20} />
                   <input
                     type="password"
                     value={password}
@@ -132,14 +115,9 @@ export default function SignupPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Confirm Password
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm Password</label>
                 <div className="relative">
-                  <FiLock
-                    className="absolute left-4 top-3 text-gray-400"
-                    size={20}
-                  />
+                  <FiLock className="absolute left-4 top-3 text-gray-400" size={20} />
                   <input
                     type="password"
                     value={confirmPassword}
@@ -152,10 +130,10 @@ export default function SignupPage() {
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isPending}
                 className="w-full py-3 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Creating Account..." : "Sign Up"}
+                {isPending ? "Creating Account..." : "Sign Up"}
               </button>
             </form>
 
@@ -167,10 +145,7 @@ export default function SignupPage() {
 
             <p className="text-center text-sm text-gray-600">
               Already have an account?{" "}
-              <Link
-                href="/auth/login"
-                className="text-orange-600 font-bold hover:text-orange-700"
-              >
+              <Link href="/auth/login" className="text-orange-600 font-bold hover:text-orange-700">
                 Log in here
               </Link>
             </p>

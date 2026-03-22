@@ -23,13 +23,8 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (publicRoutes.includes(pathname) || !isHydrated) {
-      return;
-    }
-
-    if (!token) {
-      router.push("/auth/login");
-    }
+    if (publicRoutes.includes(pathname) || !isHydrated) return;
+    if (!token) router.push("/auth/login");
   }, [token, router, pathname, isHydrated]);
 
   if (!isHydrated || (!token && !publicRoutes.includes(pathname))) {

@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Modal from "react-modal";
-import { useNotesStore } from "@/store/notesStore";
+import {
+  useTrash,
+  usePermanentDeleteNote,
+  useRestoreNote,
+} from "@/hooks/useNotes";
 import { FiX, FiTrash2, FiRotateCcw } from "react-icons/fi";
 import { Note } from "@/types";
 import { formatDistanceToNow } from "date-fns";
@@ -15,58 +19,39 @@ interface TrashModalProps {
 }
 
 export function TrashModal({ isOpen, onClose }: TrashModalProps) {
-  const { trash, isLoading, fetchTrash, permanentDeleteNote, restoreNote } =
-    useNotesStore();
-  const [isDeleting, setIsDeleting] = useState(false);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchTrash();
-    }
-  }, [isOpen, fetchTrash]);
+  const { data, isLoading } = useTrash();
+  const { mutateAsync: permanentDelete, isPending: isDeleting } =
+    usePermanentDeleteNote();
+  const { mutateAsync: restoreNote, isPending: isRestoring } = useRestoreNote();
 
-  const handleRestoreClick = (note: Note) => {
-    setSelectedNote(note);
-    setShowRestoreConfirm(true);
-  };
+  const trash = data?.items ?? [];
+  const isBusy = isDeleting || isRestoring;
 
   const handleRestoreConfirm = async () => {
     if (!selectedNote) return;
     try {
-      setIsDeleting(true);
       await restoreNote(selectedNote.id);
-      toast.success("Note restored successfully");
+      toast.success("Note restored");
       setShowRestoreConfirm(false);
       setSelectedNote(null);
-    } catch (error) {
-      console.error("Failed to restore note:", error);
+    } catch {
       toast.error("Failed to restore note");
-    } finally {
-      setIsDeleting(false);
     }
-  };
-
-  const handlePermanentDeleteClick = (note: Note) => {
-    setSelectedNote(note);
-    setShowDeleteConfirm(true);
   };
 
   const handlePermanentDeleteConfirm = async () => {
     if (!selectedNote) return;
     try {
-      setIsDeleting(true);
-      await permanentDeleteNote(selectedNote.id);
+      await permanentDelete(selectedNote.id);
       toast.success("Note permanently deleted");
       setShowDeleteConfirm(false);
       setSelectedNote(null);
-    } catch (error) {
-      console.error("Failed to permanently delete note:", error);
+    } catch {
       toast.error("Failed to delete note");
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -122,16 +107,22 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleRestoreClick(note)}
-                      disabled={isDeleting}
+                      onClick={() => {
+                        setSelectedNote(note);
+                        setShowRestoreConfirm(true);
+                      }}
+                      disabled={isBusy}
                       className="p-2 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors disabled:opacity-50"
                       title="Restore"
                     >
                       <FiRotateCcw size={18} />
                     </button>
                     <button
-                      onClick={() => handlePermanentDeleteClick(note)}
-                      disabled={isDeleting}
+                      onClick={() => {
+                        setSelectedNote(note);
+                        setShowDeleteConfirm(true);
+                      }}
+                      disabled={isBusy}
                       className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors disabled:opacity-50"
                       title="Permanently delete"
                     >
@@ -161,11 +152,12 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
           setSelectedNote(null);
         }}
         onConfirm={handleRestoreConfirm}
-        isLoading={isDeleting}
+        isLoading={isRestoring}
         title="Restore Note"
         message="Are you sure you want to restore this note?"
         confirmText="Restore"
       />
+
       <ConfirmationModal
         isOpen={showDeleteConfirm}
         onClose={() => {
@@ -174,7 +166,7 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
         }}
         onConfirm={handlePermanentDeleteConfirm}
         isLoading={isDeleting}
-        title="Permanently Delete Note"
+        title="Permanently Delete"
         message="This will permanently delete the note. This action cannot be undone."
         confirmText="Delete"
         isDangerous
