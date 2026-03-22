@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { useNotesStore } from "@/store/notesStore";
+import { useNotes, useUpdateNote } from "@/hooks/useNotes";
 import { Header } from "@/components/Header";
 import { NoteModal } from "@/components/NoteModal";
 import { TrashModal } from "@/components/TrashModal";
@@ -32,9 +32,6 @@ import { NoteCard } from "@/components/NoteCard";
 
 export default function Home() {
   const { token } = useAuthStore();
-  const { fetchNotes, notes, pagination, isLoading, updateNote } =
-    useNotesStore();
-
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("search") ?? "";
 
@@ -42,18 +39,12 @@ export default function Home() {
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
-  const [orderedNotes, setOrderedNotes] = useState<Note[]>([]);
   const [draggedNote, setDraggedNote] = useState<Note | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [localNotes, setLocalNotes] = useState<Note[]>([]);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
-
-  const isFetchingMoreRef = useRef(false);
-  const currentPageRef = useRef(1);
-  const searchQueryRef = useRef(searchQuery);
-  const paginationRef = useRef(pagination);
+  const isDraggingRef = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -62,100 +53,57 @@ export default function Home() {
     }),
   );
 
-  useEffect(() => {
-    isFetchingMoreRef.current = isFetchingMore;
-  }, [isFetchingMore]);
-  useEffect(() => {
-    paginationRef.current = pagination;
-  }, [pagination]);
-  useEffect(() => {
-    searchQueryRef.current = searchQuery;
-  }, [searchQuery]);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+  } = useNotes(searchQuery);
 
-  const getHasMore = () => {
-    const p = paginationRef.current;
-    return p ? currentPageRef.current < p.total_pages : false;
-  };
+  const { mutateAsync: updateNote } = useUpdateNote();
+
+  const allNotes = data?.pages.flatMap((page) => page.items) ?? [];
+  const totalNotes = data?.pages[0]?.total ?? 0;
+
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      setLocalNotes(allNotes);
+    }
+  }, [data]);
 
   const loadMore = useCallback(() => {
-    if (isFetchingMoreRef.current || !getHasMore()) return;
-    const nextPage = currentPageRef.current + 1;
-    setIsFetchingMore(true);
-    isFetchingMoreRef.current = true;
-    setCurrentPage(nextPage);
-    currentPageRef.current = nextPage;
-    fetchNotes({ page: nextPage, search: searchQueryRef.current });
-  }, [fetchNotes]);
+    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const reObserve = useCallback(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
-
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
-
+    if (observerRef.current) observerRef.current.disconnect();
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          loadMore();
-        }
+        if (entries[0].isIntersecting) loadMore();
       },
       { rootMargin: "300px", threshold: 0 },
     );
-
     observer.observe(sentinel);
     observerRef.current = observer;
   }, [loadMore]);
-
-  useEffect(() => {
-    if (!token) return;
-    setOrderedNotes([]);
-    setCurrentPage(1);
-    currentPageRef.current = 1;
-    fetchNotes({ page: 1, search: searchQuery });
-  }, [token, searchQuery]);
-
-  useEffect(() => {
-    if (!notes) return;
-
-    if (currentPageRef.current === 1) {
-      setOrderedNotes(notes);
-    } else {
-      setOrderedNotes((prev) => {
-        const existingIds = new Set(prev.map((n) => n.id));
-        return [...prev, ...notes.filter((n) => !existingIds.has(n.id))];
-      });
-    }
-
-    setIsFetchingMore(false);
-    isFetchingMoreRef.current = false;
-
-    setTimeout(() => reObserve(), 100);
-  }, [notes, reObserve]);
 
   useEffect(() => {
     reObserve();
     return () => observerRef.current?.disconnect();
   }, [reObserve]);
 
-  const resetAndFetch = useCallback(() => {
-    setOrderedNotes([]);
-    setCurrentPage(1);
-    currentPageRef.current = 1;
-    fetchNotes({ page: 1, search: searchQueryRef.current });
-  }, [fetchNotes]);
+  useEffect(() => {
+    if (!isFetchingNextPage) setTimeout(() => reObserve(), 100);
+  }, [isFetchingNextPage, reObserve]);
 
   const handleCreateNote = () => {
     setSelectedNote(null);
     setModalMode("create");
     setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedNote(null);
-    resetAndFetch();
   };
 
   const handleEditNote = (note: Note) => {
@@ -171,35 +119,39 @@ export default function Home() {
   };
 
   const handleDragStart = (event: DragEndEvent) => {
-    const draggedItem = orderedNotes.find(
-      (note) => note.id === event.active.id,
-    );
-    if (draggedItem) setDraggedNote(draggedItem);
+    isDraggingRef.current = true;
+    const item = localNotes.find((n) => n.id === event.active.id);
+    if (item) setDraggedNote(item);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    isDraggingRef.current = false;
     setDraggedNote(null);
-    if (over && active.id !== over.id) {
-      const oldIndex = orderedNotes.findIndex((note) => note.id === active.id);
-      const newIndex = orderedNotes.findIndex((note) => note.id === over.id);
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const reordered = arrayMove(orderedNotes, oldIndex, newIndex);
-        setOrderedNotes(reordered);
-        try {
-          for (let i = 0; i < reordered.length; i++) {
-            await updateNote(reordered[i].id, { position: i + 1 });
-          }
-          resetAndFetch();
-        } catch {
-          toast.error("Failed to update note order");
-          resetAndFetch();
-        }
-      }
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = localNotes.findIndex((n) => n.id === active.id);
+    const newIndex = localNotes.findIndex((n) => n.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(localNotes, oldIndex, newIndex);
+    setLocalNotes(reordered);
+
+    try {
+      await Promise.all(
+        reordered.map((note, i) =>
+          updateNote({ id: note.id, payload: { position: i + 1 } }),
+        ),
+      );
+    } catch {
+      toast.error("Failed to update note order");
+      setLocalNotes(allNotes);
     }
   };
 
-  const hasMore = pagination ? currentPage < pagination.total_pages : false;
+  if (!token) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-visible">
@@ -211,9 +163,9 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
               Your Notes
             </h2>
-            {pagination && (
+            {totalNotes > 0 && (
               <p className="text-gray-600">
-                {pagination.total} note{pagination.total !== 1 ? "s" : ""} total
+                {totalNotes} note{totalNotes !== 1 ? "s" : ""} total
               </p>
             )}
           </div>
@@ -228,13 +180,17 @@ export default function Home() {
 
         <SearchBar />
 
-        {isLoading && currentPage === 1 ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-pulse text-gray-500 text-lg">
               Loading notes...
             </div>
           </div>
-        ) : orderedNotes.length === 0 ? (
+        ) : isError ? (
+          <div className="text-center py-12 text-red-500">
+            Failed to load notes. Please try again.
+          </div>
+        ) : localNotes.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-300 mt-8">
             <div className="text-gray-500 mb-4">
               <p className="text-lg font-medium">No notes found</p>
@@ -263,10 +219,10 @@ export default function Home() {
           >
             <div className="columns-2 lg:columns-3 gap-4 mt-8">
               <SortableContext
-                items={orderedNotes.map((note) => note.id)}
+                items={localNotes.map((note) => note.id)}
                 strategy={rectSortingStrategy}
               >
-                {orderedNotes.map((note, index) => (
+                {localNotes.map((note, index) => (
                   <div
                     key={note.id}
                     style={{ animationDelay: `${index * 50}ms` }}
@@ -276,7 +232,7 @@ export default function Home() {
                       note={note}
                       onEdit={handleEditNote}
                       onView={handleViewNote}
-                      onNotesChange={resetAndFetch}
+                      onNotesChange={() => {}}
                     />
                   </div>
                 ))}
@@ -289,7 +245,6 @@ export default function Home() {
                   note={draggedNote}
                   onEdit={handleEditNote}
                   onView={handleViewNote}
-                  onNotesChange={resetAndFetch}
                 />
               ) : null}
             </DragOverlay>
@@ -298,7 +253,7 @@ export default function Home() {
 
         <div ref={sentinelRef} className="h-4 mt-4" />
 
-        {isFetchingMore && (
+        {isFetchingNextPage && (
           <div className="flex justify-center py-6">
             <div className="flex items-center gap-2 text-gray-500 text-sm">
               <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
@@ -307,12 +262,12 @@ export default function Home() {
           </div>
         )}
 
-        {!hasMore &&
-          orderedNotes.length > 0 &&
-          !isFetchingMore &&
+        {!hasNextPage &&
+          localNotes.length > 0 &&
+          !isFetchingNextPage &&
           !isLoading && (
             <p className="text-center text-gray-400 text-sm py-6">
-              All {pagination?.total} notes loaded
+              All {totalNotes} notes loaded
             </p>
           )}
       </main>
@@ -320,18 +275,15 @@ export default function Home() {
       <NoteModal
         note={selectedNote}
         isOpen={isModalOpen}
-        onClose={handleCloseModal}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedNote(null);
+        }}
         mode={modalMode}
-        onNotesChange={resetAndFetch}
+        onNotesChange={() => {}}
       />
 
-      <TrashModal
-        isOpen={isTrashOpen}
-        onClose={() => {
-          setIsTrashOpen(false);
-          resetAndFetch();
-        }}
-      />
+      <TrashModal isOpen={isTrashOpen} onClose={() => setIsTrashOpen(false)} />
     </div>
   );
 }
