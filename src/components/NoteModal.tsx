@@ -1,7 +1,7 @@
 "use client";
 
 import { Note, CreateNotePayload, UpdateNotePayload } from "@/types";
-import { useNotesStore } from "@/store/notesStore";
+import { useCreateNote, useUpdateNote } from "@/hooks/useNotes";
 import { useState, useEffect } from "react";
 import { FiX } from "react-icons/fi";
 import { toast } from "react-toastify";
@@ -32,27 +32,23 @@ const getNowLocal = () => {
 };
 
 interface NoteModalProps {
-  note: Note;
+  note: Note | null;
   isOpen: boolean;
   onClose: () => void;
   mode: "create" | "edit";
   onNotesChange?: () => void;
 }
 
-export function NoteModal({
-  note,
-  isOpen,
-  onClose,
-  mode,
-  onNotesChange,
-}: NoteModalProps) {
+export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [colour, setColour] = useState("white");
   const [reminderAt, setReminderAt] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { createNote, updateNote } = useNotesStore();
+
+  const { mutateAsync: createNote, isPending: isCreating } = useCreateNote();
+  const { mutateAsync: updateNote, isPending: isUpdating } = useUpdateNote();
+  const isLoading = isCreating || isUpdating;
 
   const hasChanges =
     note &&
@@ -65,7 +61,7 @@ export function NoteModal({
   useEffect(() => {
     if (note) {
       setTitle(note.title);
-      setDescription(note.description);
+      setDescription(note.description ?? "");
       setSelectedTags(note.tags || []);
       setColour(note.colour || "white");
       setReminderAt(note.reminder_at || "");
@@ -80,7 +76,6 @@ export function NoteModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
     try {
       if (mode === "create") {
@@ -92,7 +87,7 @@ export function NoteModal({
           reminder_at: reminderAt || undefined,
         };
         await createNote(payload);
-        toast.success("Note created successfully");
+        toast.success("Note created");
       } else if (mode === "edit" && note) {
         const payload: UpdateNotePayload = {
           title,
@@ -101,16 +96,12 @@ export function NoteModal({
           colour: colour !== "white" ? colour : undefined,
           reminder_at: reminderAt || undefined,
         };
-        await updateNote(note.id, payload);
-        toast.success("Note updated successfully");
+        await updateNote({ id: note.id, payload });
+        toast.success("Note updated");
       }
-      onNotesChange?.();
       onClose();
-    } catch (error) {
-      console.error("Failed to save note:", error);
+    } catch {
       toast.error("Failed to save note. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -141,9 +132,7 @@ export function NoteModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Tags
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Tags</label>
             <div className="flex flex-wrap gap-2 mb-2">
               {selectedTags.map((tag, index) => (
                 <span
@@ -153,11 +142,7 @@ export function NoteModal({
                   {tag}
                   <button
                     type="button"
-                    onClick={() =>
-                      setSelectedTags(
-                        selectedTags.filter((_, i) => i !== index),
-                      )
-                    }
+                    onClick={() => setSelectedTags(selectedTags.filter((_, i) => i !== index))}
                     className="ml-1 hover:bg-orange-200 rounded-full p-0.5"
                   >
                     ×
@@ -183,9 +168,7 @@ export function NoteModal({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Title
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
             <input
               type="text"
               value={title}
@@ -197,9 +180,7 @@ export function NoteModal({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Description
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -211,20 +192,9 @@ export function NoteModal({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Colour
-            </label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Colour</label>
             <div className="grid grid-cols-6 gap-3">
-              {[
-                "red",
-                "orange",
-                "yellow",
-                "green",
-                "blue",
-                "pink",
-                "cyan",
-                "slate",
-              ].map((col) => (
+              {["red", "orange", "yellow", "green", "blue", "pink", "cyan", "slate"].map((col) => (
                 <button
                   key={col}
                   type="button"
@@ -296,11 +266,7 @@ export function NoteModal({
                 disabled={isLoading}
                 className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50"
               >
-                {isLoading
-                  ? "Saving..."
-                  : mode === "create"
-                    ? "Create"
-                    : "Update"}
+                {isLoading ? "Saving..." : mode === "create" ? "Create" : "Update"}
               </button>
             )}
           </div>
