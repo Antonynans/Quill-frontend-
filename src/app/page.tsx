@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { useNotesStore } from "@/store/notesStore";
 import { Header } from "@/components/Header";
 import { NoteModal } from "@/components/NoteModal";
 import { TrashModal } from "@/components/TrashModal";
 import { SortableNoteCard } from "@/components/SortableNoteCard";
+import { SearchBar } from "@/components/Searchbar";
 import { Note } from "@/types";
-import { FiPlus, FiSearch } from "react-icons/fi";
+import { FiPlus } from "react-icons/fi";
 import { toast } from "react-toastify";
 import {
   DndContext,
@@ -33,13 +35,25 @@ export default function Home() {
   const { fetchNotes, notes, pagination, isLoading, updateNote } =
     useNotesStore();
 
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("search") ?? "";
+
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTrashOpen, setIsTrashOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [orderedNotes, setOrderedNotes] = useState<Note[]>([]);
   const [draggedNote, setDraggedNote] = useState<Note | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const isFetchingMoreRef = useRef(false);
+  const currentPageRef = useRef(1);
+  const searchQueryRef = useRef(searchQuery);
+  const paginationRef = useRef(pagination);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -49,22 +63,88 @@ export default function Home() {
   );
 
   useEffect(() => {
-    if (token) {
-      fetchNotes();
+    isFetchingMoreRef.current = isFetchingMore;
+  }, [isFetchingMore]);
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
+
+  const getHasMore = () => {
+    const p = paginationRef.current;
+    return p ? currentPageRef.current < p.total_pages : false;
+  };
+
+  const loadMore = useCallback(() => {
+    if (isFetchingMoreRef.current || !getHasMore()) return;
+    const nextPage = currentPageRef.current + 1;
+    setIsFetchingMore(true);
+    isFetchingMoreRef.current = true;
+    setCurrentPage(nextPage);
+    currentPageRef.current = nextPage;
+    fetchNotes({ page: nextPage, search: searchQueryRef.current });
+  }, [fetchNotes]);
+
+  const reObserve = useCallback(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    if (observerRef.current) {
+      observerRef.current.disconnect();
     }
-  }, [token, fetchNotes]);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      { rootMargin: "300px", threshold: 0 },
+    );
+
+    observer.observe(sentinel);
+    observerRef.current = observer;
+  }, [loadMore]);
 
   useEffect(() => {
-    if (notes) {
-      setOrderedNotes(notes);
-    }
-  }, [notes]);
+    if (!token) return;
+    setOrderedNotes([]);
+    setCurrentPage(1);
+    currentPageRef.current = 1;
+    fetchNotes({ page: 1, search: searchQuery });
+  }, [token, searchQuery]);
 
-  const filteredNotes = orderedNotes?.filter(
-    (note) =>
-      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  useEffect(() => {
+    if (!notes) return;
+
+    if (currentPageRef.current === 1) {
+      setOrderedNotes(notes);
+    } else {
+      setOrderedNotes((prev) => {
+        const existingIds = new Set(prev.map((n) => n.id));
+        return [...prev, ...notes.filter((n) => !existingIds.has(n.id))];
+      });
+    }
+
+    setIsFetchingMore(false);
+    isFetchingMoreRef.current = false;
+
+    setTimeout(() => reObserve(), 100);
+  }, [notes, reObserve]);
+
+  useEffect(() => {
+    reObserve();
+    return () => observerRef.current?.disconnect();
+  }, [reObserve]);
+
+  const resetAndFetch = useCallback(() => {
+    setOrderedNotes([]);
+    setCurrentPage(1);
+    currentPageRef.current = 1;
+    fetchNotes({ page: 1, search: searchQueryRef.current });
+  }, [fetchNotes]);
 
   const handleCreateNote = () => {
     setSelectedNote(null);
@@ -75,7 +155,7 @@ export default function Home() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedNote(null);
-    fetchNotes();
+    resetAndFetch();
   };
 
   const handleEditNote = (note: Note) => {
@@ -91,39 +171,35 @@ export default function Home() {
   };
 
   const handleDragStart = (event: DragEndEvent) => {
-    const draggedId = event.active.id;
-    const draggedItem = orderedNotes.find((note) => note.id === draggedId);
-    if (draggedItem) {
-      setDraggedNote(draggedItem);
-    }
+    const draggedItem = orderedNotes.find(
+      (note) => note.id === event.active.id,
+    );
+    if (draggedItem) setDraggedNote(draggedItem);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setDraggedNote(null);
-
     if (over && active.id !== over.id) {
-      const oldIndex = filteredNotes.findIndex((note) => note.id === active.id);
-      const newIndex = filteredNotes.findIndex((note) => note.id === over.id);
-
+      const oldIndex = orderedNotes.findIndex((note) => note.id === active.id);
+      const newIndex = orderedNotes.findIndex((note) => note.id === over.id);
       if (oldIndex !== -1 && newIndex !== -1) {
-        const newOrderedNotes = arrayMove(filteredNotes, oldIndex, newIndex);
-        setOrderedNotes(newOrderedNotes);
-
+        const reordered = arrayMove(orderedNotes, oldIndex, newIndex);
+        setOrderedNotes(reordered);
         try {
-          for (let i = 0; i < newOrderedNotes.length; i++) {
-            const note = newOrderedNotes[i];
-            await updateNote(note.id, { position: i + 1 });
+          for (let i = 0; i < reordered.length; i++) {
+            await updateNote(reordered[i].id, { position: i + 1 });
           }
-          await fetchNotes();
-        } catch (error) {
-          console.error("Failed to update note positions:", error);
+          resetAndFetch();
+        } catch {
           toast.error("Failed to update note order");
-          await fetchNotes();
+          resetAndFetch();
         }
       }
     }
   };
+
+  const hasMore = pagination ? currentPage < pagination.total_pages : false;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-visible">
@@ -141,7 +217,6 @@ export default function Home() {
               </p>
             )}
           </div>
-
           <button
             onClick={handleCreateNote}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors shadow-lg hover:shadow-xl"
@@ -151,30 +226,16 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="mb-6">
-          <div className="relative">
-            <FiSearch
-              className="absolute left-4 top-3 text-gray-400"
-              size={20}
-            />
-            <input
-              type="text"
-              placeholder="Search notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:border-transparent"
-            />
-          </div>
-        </div>
+        <SearchBar />
 
-        {isLoading ? (
+        {isLoading && currentPage === 1 ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-pulse-soft text-gray-500 text-lg">
+            <div className="animate-pulse text-gray-500 text-lg">
               Loading notes...
             </div>
           </div>
-        ) : filteredNotes.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-300">
+        ) : orderedNotes.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-300 mt-8">
             <div className="text-gray-500 mb-4">
               <p className="text-lg font-medium">No notes found</p>
               <p className="text-sm">
@@ -200,39 +261,60 @@ export default function Home() {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="columns-2 lg:columns-3 gap-4 mt-8">
               <SortableContext
-                items={filteredNotes.map((note) => note.id)}
+                items={orderedNotes.map((note) => note.id)}
                 strategy={rectSortingStrategy}
               >
-                {filteredNotes.map((note, index) => (
+                {orderedNotes.map((note, index) => (
                   <div
                     key={note.id}
                     style={{ animationDelay: `${index * 50}ms` }}
-                    className="animate-slide-in"
+                    className="animate-slide-in break-inside-avoid-column mb-4"
                   >
                     <SortableNoteCard
                       note={note}
                       onEdit={handleEditNote}
                       onView={handleViewNote}
-                      onNotesChange={fetchNotes}
+                      onNotesChange={resetAndFetch}
                     />
                   </div>
                 ))}
               </SortableContext>
             </div>
+
             <DragOverlay zIndex={1}>
               {draggedNote ? (
                 <NoteCard
                   note={draggedNote}
                   onEdit={handleEditNote}
                   onView={handleViewNote}
-                  onNotesChange={fetchNotes}
+                  onNotesChange={resetAndFetch}
                 />
               ) : null}
             </DragOverlay>
           </DndContext>
         )}
+
+        <div ref={sentinelRef} className="h-4 mt-4" />
+
+        {isFetchingMore && (
+          <div className="flex justify-center py-6">
+            <div className="flex items-center gap-2 text-gray-500 text-sm">
+              <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+              Loading more notes...
+            </div>
+          </div>
+        )}
+
+        {!hasMore &&
+          orderedNotes.length > 0 &&
+          !isFetchingMore &&
+          !isLoading && (
+            <p className="text-center text-gray-400 text-sm py-6">
+              All {pagination?.total} notes loaded
+            </p>
+          )}
       </main>
 
       <NoteModal
@@ -240,14 +322,14 @@ export default function Home() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         mode={modalMode}
-        onNotesChange={fetchNotes}
+        onNotesChange={resetAndFetch}
       />
 
       <TrashModal
         isOpen={isTrashOpen}
         onClose={() => {
           setIsTrashOpen(false);
-          fetchNotes();
+          resetAndFetch();
         }}
       />
     </div>
