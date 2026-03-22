@@ -12,29 +12,28 @@ export const useNotesStore = create<NotesStore>((set) => ({
   setNotes: (notes) => set({ notes }),
   setTrash: (trash) => set({ trash }),
 
-  fetchNotes: async (
-    search?: string,
-    colour?: string,
-    tag?: string,
-    pinnedOnly?: boolean,
-    sortBy?: string,
-    sortOrder?: string,
-  ) => {
+  fetchNotes: async (params?: { page?: number; search?: string }) => {
     set({ isLoading: true });
     try {
-      const params: any = { page: 1, page_size: 10 };
-      if (search) params.search = search;
-      if (colour) params.colour = colour;
-      if (tag) params.tag = tag;
-      if (pinnedOnly) params.pinned_only = pinnedOnly;
-      if (sortBy) params.sort_by = sortBy;
-      if (sortOrder) params.sort_order = sortOrder;
+      const page = params?.page ?? 1;
+      const search = params?.search ?? "";
 
-      const response = await axios.get(`${API_URL}/api/notes`, { params });
-      const { items, total, page, page_size, total_pages } = response.data;
+      const response = await axios.get(`${API_URL}/api/notes`, {
+        params: {
+          page,
+          page_size: 12,
+          ...(search ? { search } : {}),
+        },
+      });
+
       set({
-        notes: items,
-        pagination: { total, page, page_size, total_pages },
+        notes: response.data.items,
+        pagination: {
+          total: response.data.total,
+          page: response.data.page,
+          page_size: response.data.page_size,
+          total_pages: response.data.total_pages,
+        },
         isLoading: false,
       });
     } catch (error) {
@@ -43,7 +42,7 @@ export const useNotesStore = create<NotesStore>((set) => ({
     }
   },
 
-  fetchTrash: async (page = 1, pageSize = 10) => {
+  fetchTrash: async (page = 1, pageSize = 12) => {
     set({ isLoading: true });
     try {
       const response = await axios.get(`${API_URL}/api/notes/trash`, {
