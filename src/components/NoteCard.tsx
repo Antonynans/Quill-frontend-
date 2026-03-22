@@ -172,28 +172,26 @@ export function NoteCard({
           </p>
         </div>
 
-        
-
         <div className="flex lg:items-center lg:flex-row flex-col justify-between text-xs text-gray-500 border-t pt-3 gap-4">
           {note.tags && note.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 lg:w-full">
-            {note.tags.map((tag, index) => (
-              <span
-                key={index}
-                className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md line-clamp-1"
-              >
-                {tag}
-              </span>
-            ))}
+            <div className="flex flex-wrap gap-1 lg:w-full">
+              {note.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md line-clamp-1"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="lg:flex justify-end w-full">
+            <span>
+              {note.edited_at
+                ? `Edited ${formatDistanceToNow(new Date(note.edited_at), { addSuffix: true })}`
+                : `Created ${formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}`}
+            </span>
           </div>
-        )}
-         <div className="lg:flex justify-end w-full">
-           <span>
-            {note.edited_at
-              ? `Edited ${formatDistanceToNow(new Date(note.edited_at), { addSuffix: true })}`
-              : `Created ${formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}`}
-          </span>
-         </div>
         </div>
       </div>
     </>
