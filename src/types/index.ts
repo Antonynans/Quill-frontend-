@@ -6,12 +6,6 @@ export interface User {
   bio?: string;
 }
 
-export interface AuthResponse {
-  access_token: string;
-  token_type: string;
-  user?: User;
-}
-
 export interface Note {
   id: number;
   title: string;
@@ -28,9 +22,10 @@ export interface Note {
   reminder_at: string | null;
   reminder_sent: boolean;
   owner_id: number;
-  edited_at?: string;
+  edited_at?: string | null;
+  deleted_at?: string | null;
   created_at: string;
-  updated_at?: string;
+  updated_at?: string | null;
 }
 
 export interface CreateNotePayload {
@@ -48,54 +43,4 @@ export interface UpdateNotePayload {
   colour?: string;
   reminder_at?: string;
   position?: number;
-}
-
-export interface AuthStore {
-  user: User | null;
-  token: string | null;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, fullName?: string) => Promise<void>;
-  verifyEmailToken: (token: string) => Promise<void>;
-  resendVerification: (email: string) => Promise<void>;
-  forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (token: string, newPassword: string) => Promise<void>;
-  logout: () => void;
-  setUser: (user: User | null) => void;
-  setToken: (token: string | null) => void;
-  fetchUser: () => Promise<void>;
-}
-
-export interface NotesStore {
-  notes: Note[];
-  trash: Note[];
-  pagination: {
-    total: number;
-    page: number;
-    page_size: number;
-    total_pages: number;
-  } | null;
-  isLoading: boolean;
-  fetchNotes: (
-    page?: number,
-    search?: string,
-    colour?: string,
-    tag?: string,
-    pinnedOnly?: boolean,
-    sortBy?: string,
-    sortOrder?: string,
-  ) => Promise<void>;
-  fetchTrash: (page?: number, pageSize?: number) => Promise<void>;
-  createNote: (payload: CreateNotePayload) => Promise<Note>;
-  updateNote: (id: number, payload: UpdateNotePayload) => Promise<Note>;
-  deleteNote: (id: number) => Promise<void>;
-  permanentDeleteNote: (id: number) => Promise<void>;
-  restoreNote: (id: number) => Promise<Note>;
-  togglePin: (id: number) => Promise<Note>;
-  lockNote: (id: number, lockPassword?: string) => Promise<Note>;
-  unlockNote: (id: number, lockPassword: string) => Promise<Note>;
-  shareNote: (id: number) => Promise<Note>;
-  unshareNote: (id: number) => Promise<Note>;
-  setNotes: (notes: Note[]) => void;
-  setTrash: (trash: Note[]) => void;
 }
