@@ -54,7 +54,7 @@ export default function ResetPasswordPage() {
       }, 2000);
     } catch (err: any) {
       setError(
-        err.response?.data?.message ||
+        err.response?.data?.detail ||
           "Failed to reset password. Please try again.",
       );
     }

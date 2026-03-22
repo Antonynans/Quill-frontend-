@@ -40,7 +40,7 @@ export default function SignupPage() {
       router.push("/auth/verify-email");
     } catch (err: any) {
       setError(
-        err.response?.data?.message || "Signup failed. Please try again.",
+        err.response?.data?.detail || "Signup failed. Please try again.",
       );
     }
   };

@@ -28,7 +28,7 @@ export default function LoginPage() {
       router.push("/");
     } catch (err: any) {
       setError(
-        err.response?.data?.message || "Login failed. Please try again.",
+        err.response?.data?.detail || "Login failed. Please try again.",
       );
     }
   };
@@ -119,12 +119,14 @@ export default function LoginPage() {
             </div>
 
             <div className="text-center space-y-2">
-              <Link
+              <div className="flex justify-center">
+                <Link
                 href="/auth/forgot-password"
                 className="text-sm text-orange-600 hover:text-orange-700 block"
               >
                 Forgot Password?
               </Link>
+              </div>
               <p className="text-sm text-gray-600">
                 Not registered?{" "}
                 <Link
