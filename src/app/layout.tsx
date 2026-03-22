@@ -4,19 +4,14 @@ import { AuthWrapper } from "@/components/AuthWrapper";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { ModalProvider } from "@/components/ModalProvider";
+import { ReactQueryProvider } from "@/providers/ReactQueryProvider";
 
 export const metadata: Metadata = {
   title: "Quill - Organize Your Developer Notes",
-  description:
-    "A beautiful notes app for developers to organize and manage notes by skills",
-  viewport: "width=device-width, initial-scale=1",
+  description: "A beautiful notes app for developers to organize and manage notes by skills",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -24,11 +19,13 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body>
-        <AuthWrapper>
-          <ModalProvider />
-          <ToastContainer />
-          {children}
-        </AuthWrapper>
+        <ReactQueryProvider>
+          <AuthWrapper>
+            <ModalProvider />
+            <ToastContainer />
+            {children}
+          </AuthWrapper>
+        </ReactQueryProvider>
       </body>
     </html>
   );
