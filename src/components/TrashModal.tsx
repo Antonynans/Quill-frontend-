@@ -137,7 +137,7 @@ export function TrashModal({ isOpen, onClose }: TrashModalProps) {
                       </h3>
                       <p className="text-sm text-gray-500 mt-1">
                         Deleted{" "}
-                        {formatDistanceToNow(new Date(note.updated_at), {
+                        {note.updated_at && formatDistanceToNow(new Date(note.updated_at), {
                           addSuffix: true,
                         })}
                       </p>
