@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthWrapper } from "@/components/AuthWrapper";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { ModalProvider } from "@/components/ModalProvider";
 
 export const metadata: Metadata = {
   title: "Quill - Organize Your Developer Notes",
@@ -24,6 +25,7 @@ export default function RootLayout({
       </head>
       <body>
         <AuthWrapper>
+          <ModalProvider />
           <ToastContainer />
           {children}
         </AuthWrapper>
