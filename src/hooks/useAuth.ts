@@ -94,3 +94,93 @@ export function useLogout() {
     delete axios.defaults.headers.common["Authorization"];
   };
 }
+
+/**
+ * Profile Management Hooks
+ */
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      fullName,
+      bio,
+    }: {
+      fullName: string;
+      bio: string | null;
+    }) => authApi.updateProfile(fullName, bio),
+
+    onSuccess: (data) => {
+      queryClient.setQueryData(authKeys.user, data);
+    },
+  });
+}
+
+export function useUploadAvatar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: File) => authApi.uploadAvatar(file),
+
+    onSuccess: (data) => {
+      queryClient.setQueryData(authKeys.user, data);
+    },
+  });
+}
+
+export function useChangePassword() {
+  const { logout } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      currentPassword,
+      newPassword,
+    }: {
+      currentPassword: string;
+      newPassword: string;
+    }) => authApi.changePassword(currentPassword, newPassword),
+
+    onSuccess: () => {
+      // Clear auth data after password change
+      logout();
+      queryClient.clear();
+      delete axios.defaults.headers.common["Authorization"];
+    },
+  });
+}
+
+/**
+ * Additional Auth Hooks
+ */
+
+export function useLogoutAllDevices() {
+  const { logout } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => authApi.logoutAllDevices(),
+
+    onSuccess: () => {
+      logout();
+      queryClient.clear();
+      delete axios.defaults.headers.common["Authorization"];
+    },
+  });
+}
+
+export function useRefreshToken() {
+  const { setToken } = useAuthStore();
+
+  return useMutation({
+    mutationFn: (refreshToken: string) =>
+      authApi.refreshToken(refreshToken),
+
+    onSuccess: (data) => {
+      const { access_token } = data;
+      setToken(access_token);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
+    },
+  });
+}
