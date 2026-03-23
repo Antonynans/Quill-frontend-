@@ -95,21 +95,12 @@ export function useLogout() {
   };
 }
 
-/**
- * Profile Management Hooks
- */
-
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      fullName,
-      bio,
-    }: {
-      fullName: string;
-      bio: string | null;
-    }) => authApi.updateProfile(fullName, bio),
+    mutationFn: ({ fullName, bio }: { fullName: string; bio: string | null }) =>
+      authApi.updateProfile(fullName, bio),
 
     onSuccess: (data) => {
       queryClient.setQueryData(authKeys.user, data);
@@ -143,17 +134,12 @@ export function useChangePassword() {
     }) => authApi.changePassword(currentPassword, newPassword),
 
     onSuccess: () => {
-      // Clear auth data after password change
       logout();
       queryClient.clear();
       delete axios.defaults.headers.common["Authorization"];
     },
   });
 }
-
-/**
- * Additional Auth Hooks
- */
 
 export function useLogoutAllDevices() {
   const { logout } = useAuthStore();
@@ -174,8 +160,7 @@ export function useRefreshToken() {
   const { setToken } = useAuthStore();
 
   return useMutation({
-    mutationFn: (refreshToken: string) =>
-      authApi.refreshToken(refreshToken),
+    mutationFn: (refreshToken: string) => authApi.refreshToken(refreshToken),
 
     onSuccess: (data) => {
       const { access_token } = data;
