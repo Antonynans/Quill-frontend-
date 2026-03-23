@@ -153,7 +153,7 @@ export default function Home() {
   if (!token) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-visible">
+    <div className="min-h-screen overflow-visible">
       <Header onTrashClick={() => setIsTrashOpen(true)} />
 
       <main className="container mx-auto px-4 py-8 md:py-10 overflow-visible">

@@ -67,7 +67,10 @@ export function Header({ onTrashClick }: HeaderProps) {
       />
       <header className="sticky top-0 z-40 bg-slate-800 text-white shadow-lg">
         <div className="flex items-center justify-between px-4 py-3 md:px-6">
-          <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => router.push("/")}
+          >
             <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center font-bold text-white">
               Q
             </div>
@@ -128,7 +131,7 @@ export function Header({ onTrashClick }: HeaderProps) {
                   <button
                     onClick={() => {
                       setProfileMenuOpen(false);
-                      router.push("/settings");
+                      router.push("/profile#setting");
                     }}
                     className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 transition-colors border-b border-gray-200"
                   >
@@ -186,7 +189,7 @@ export function Header({ onTrashClick }: HeaderProps) {
             <button
               onClick={() => {
                 setMenuOpen(false);
-                router.push("/settings");
+                router.push("/profile#setting");
               }}
               className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-600 transition-colors text-sm flex items-center gap-2"
             >
