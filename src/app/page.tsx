@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { useNotes, useUpdateNote } from "@/hooks/useNotes";
+import { useNotes, useReorderNotes } from "@/hooks/useNotes";
 import { Header } from "@/components/Header";
 import { NoteModal } from "@/components/NoteModal";
 import { TrashModal } from "@/components/TrashModal";
@@ -11,7 +11,6 @@ import { SortableNoteCard } from "@/components/SortableNoteCard";
 import { SearchBar } from "@/components/Searchbar";
 import { Note } from "@/types";
 import { FiPlus } from "react-icons/fi";
-import { toast } from "react-toastify";
 import {
   DndContext,
   DragOverlay,
@@ -45,6 +44,7 @@ export default function Home() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const isDraggingRef = useRef(false);
+  const isSavingOrderRef = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -62,13 +62,13 @@ export default function Home() {
     isError,
   } = useNotes(searchQuery);
 
-  const { mutateAsync: updateNote } = useUpdateNote();
+  const { mutateAsync: reorderNotes } = useReorderNotes();
 
   const allNotes = data?.pages.flatMap((page) => page.items) ?? [];
   const totalNotes = data?.pages[0]?.total ?? 0;
 
   useEffect(() => {
-    if (!isDraggingRef.current) {
+    if (!isDraggingRef.current && !isSavingOrderRef.current) {
       setLocalNotes(allNotes);
     }
   }, [data]);
@@ -133,21 +133,20 @@ export default function Home() {
 
     const oldIndex = localNotes.findIndex((n) => n.id === active.id);
     const newIndex = localNotes.findIndex((n) => n.id === over.id);
-
     if (oldIndex === -1 || newIndex === -1) return;
 
     const reordered = arrayMove(localNotes, oldIndex, newIndex);
+
     setLocalNotes(reordered);
 
+    isSavingOrderRef.current = true;
+
     try {
-      await Promise.all(
-        reordered.map((note, i) =>
-          updateNote({ id: note.id, payload: { position: i + 1 } }),
-        ),
+      await reorderNotes(
+        reordered.map((note, i) => ({ id: note.id, position: i + 1 })),
       );
-    } catch {
-      toast.error("Failed to update note order");
-      setLocalNotes(allNotes);
+    } finally {
+      isSavingOrderRef.current = false;
     }
   };
 
@@ -232,7 +231,6 @@ export default function Home() {
                       note={note}
                       onEdit={handleEditNote}
                       onView={handleViewNote}
-                      onNotesChange={() => {}}
                     />
                   </div>
                 ))}

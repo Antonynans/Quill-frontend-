@@ -326,3 +326,25 @@ export function useRestoreNote() {
     onError: () => toast.error("Failed to restore note"),
   });
 }
+
+export function useReorderNotes() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async (reordered: { id: number; position: number }[]) => {
+      for (const item of reordered) {
+        await notesApi.updateNote(item.id, { position: item.position });
+      }
+    },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
+      toast.error("Failed to update note order");
+    },
+  });
+
+  return mutation;
+}
