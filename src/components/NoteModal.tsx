@@ -2,7 +2,7 @@
 
 import { Note, CreateNotePayload, UpdateNotePayload } from "@/types";
 import { useCreateNote, useUpdateNote } from "@/hooks/useNotes";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FiX } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { formatDistanceToNow } from "date-fns";
@@ -45,18 +45,10 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [colour, setColour] = useState("white");
   const [reminderAt, setReminderAt] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const { mutateAsync: createNote, isPending: isCreating } = useCreateNote();
-  const { mutateAsync: updateNote, isPending: isUpdating } = useUpdateNote();
-  const isLoading = isCreating || isUpdating;
-
-  const hasChanges =
-    note &&
-    (title !== note.title ||
-      description !== note.description ||
-      JSON.stringify(selectedTags) !== JSON.stringify(note.tags || []) ||
-      colour !== (note.colour || "white") ||
-      reminderAt !== (note.reminder_at || ""));
+  const { mutateAsync: updateNote } = useUpdateNote();
 
   useEffect(() => {
     if (note) {
@@ -74,34 +66,61 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
     }
   }, [note, isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const getChangedFields = useCallback((): UpdateNotePayload | null => {
+    if (!note) return null;
 
-    try {
-      if (mode === "create") {
-        const payload: CreateNotePayload = {
-          title,
-          description,
-          tags: selectedTags.length > 0 ? selectedTags : undefined,
-          colour: colour !== "white" ? colour : undefined,
-          reminder_at: reminderAt || undefined,
-        };
-        await createNote(payload);
-        toast.success("Note created");
-      } else if (mode === "edit" && note) {
-        const payload: UpdateNotePayload = {
-          title,
-          description,
-          tags: selectedTags.length > 0 ? selectedTags : undefined,
-          colour: colour !== "white" ? colour : undefined,
-          reminder_at: reminderAt || undefined,
-        };
-        await updateNote({ id: note.id, payload });
-        toast.success("Note updated");
+    const payload: UpdateNotePayload = {};
+
+    if (title !== note.title) payload.title = title;
+
+    if (description !== (note.description ?? ""))
+      payload.description = description;
+
+    if (JSON.stringify(selectedTags) !== JSON.stringify(note.tags || []))
+      payload.tags = selectedTags.length > 0 ? selectedTags : [];
+
+    if (colour !== (note.colour || "white"))
+      payload.colour = colour !== "white" ? colour : undefined;
+
+    if (reminderAt !== (note.reminder_at || ""))
+      payload.reminder_at = reminderAt || undefined;
+
+    return Object.keys(payload).length > 0 ? payload : null;
+  }, [note, title, description, selectedTags, colour, reminderAt]);
+
+  const handleClose = useCallback(async () => {
+    if (mode === "edit" && note) {
+      const payload = getChangedFields();
+      if (payload && title.trim()) {
+        setIsSaving(true);
+        try {
+          await updateNote({ id: note.id, payload });
+        } catch {
+          toast.error("Failed to save note");
+        } finally {
+          setIsSaving(false);
+        }
       }
+    }
+    onClose();
+  }, [mode, note, title, getChangedFields, updateNote, onClose]);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    try {
+      const payload: CreateNotePayload = {
+        title,
+        description,
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
+        colour: colour !== "white" ? colour : undefined,
+        reminder_at: reminderAt || undefined,
+      };
+      await createNote(payload);
+      toast.success("Note created");
       onClose();
     } catch {
-      toast.error("Failed to save note. Please try again.");
+      toast.error("Failed to create note. Please try again.");
     }
   };
 
@@ -110,8 +129,8 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-      onClick={onClose}
-      style={{ zIndex: 999999 }}
+      onClick={handleClose}
+      style={{ zIndex: 99 }}
     >
       <div
         className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in"
@@ -119,20 +138,31 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
       >
         <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold">
-            {mode === "create" && "New Note"}
-            {mode === "edit" && (hasChanges ? "Edit Note" : "View Note")}
+            {mode === "create" ? "New Note" : "Edit Note"}
           </h2>
           <button
-            onClick={onClose}
-            className="p-2 hover:bg-orange-400 rounded-lg transition-colors"
+            onClick={handleClose}
+            disabled={isSaving}
+            className="p-2 hover:bg-orange-400 rounded-lg transition-colors disabled:opacity-50"
           >
-            <FiX size={24} />
+            {isSaving ? (
+              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <FiX size={24} />
+            )}
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form
+          onSubmit={
+            mode === "create" ? handleCreate : (e) => e.preventDefault()
+          }
+          className="p-6 space-y-4"
+        >
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Tags</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Tags
+            </label>
             <div className="flex flex-wrap gap-2 mb-2">
               {selectedTags.map((tag, index) => (
                 <span
@@ -142,7 +172,11 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
                   {tag}
                   <button
                     type="button"
-                    onClick={() => setSelectedTags(selectedTags.filter((_, i) => i !== index))}
+                    onClick={() =>
+                      setSelectedTags(
+                        selectedTags.filter((_, i) => i !== index),
+                      )
+                    }
                     className="ml-1 hover:bg-orange-200 rounded-full p-0.5"
                   >
                     ×
@@ -168,7 +202,9 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Title
+            </label>
             <input
               type="text"
               value={title}
@@ -180,7 +216,9 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Description
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -192,9 +230,20 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Colour</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Colour
+            </label>
             <div className="grid grid-cols-6 gap-3">
-              {["red", "orange", "yellow", "green", "blue", "pink", "cyan", "slate"].map((col) => (
+              {[
+                "red",
+                "orange",
+                "yellow",
+                "green",
+                "blue",
+                "pink",
+                "cyan",
+                "slate",
+              ].map((col) => (
                 <button
                   key={col}
                   type="button"
@@ -252,24 +301,26 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
             </span>
           </div>
 
-          <div className="flex gap-3 pt-4 border-t">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-            >
-              Cancel
-            </button>
-            {(mode === "create" || hasChanges) && (
+          {mode === "create" && (
+            <div className="flex gap-3 pt-4 border-t">
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={isSaving}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50"
+              >
+                {isSaving ? "Saving..." : "Cancel"}
+              </button>
+
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isCreating}
                 className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50"
               >
-                {isLoading ? "Saving..." : mode === "create" ? "Create" : "Update"}
+                {isCreating ? "Creating..." : "Create"}
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </form>
       </div>
     </div>
