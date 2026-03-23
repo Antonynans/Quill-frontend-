@@ -7,22 +7,29 @@ import { useState, useEffect, useRef } from "react";
 import { useDeleteNote, useTogglePin } from "@/hooks/useNotes";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { toast } from "react-toastify";
-import { LuPin } from "react-icons/lu";
-import { MdPinEnd } from "react-icons/md";
+import { LuPin, LuPinOff } from "react-icons/lu";
 
-const getColourClass = (col: string) => {
-  const colourMap: Record<string, string> = {
-    red: "bg-red-100 text-red-900 border border-red-300",
-    orange: "bg-orange-100 text-orange-900 border border-orange-300",
-    yellow: "bg-yellow-100 text-yellow-900 border border-yellow-300",
-    green: "bg-green-100 text-green-900 border border-green-300",
-    blue: "bg-blue-100 text-blue-900 border border-blue-300",
-    pink: "bg-pink-100 text-pink-900 border border-pink-300",
-    cyan: "bg-cyan-100 text-cyan-900 border border-cyan-300",
-    slate: "bg-slate-100 text-slate-900 border border-slate-300",
-  };
-  return colourMap[col] || "bg-gray-100 text-gray-900 border border-gray-300";
-};
+const ALLOWED_COLOURS = [
+  "#ffffff",
+  "#fef9c3",
+  "#fefce8",
+  "#dcfce7",
+  "#dbeafe",
+  "#fce7f3",
+  "#ffedd5",
+  "#fde68a",
+  "#a7f3d0",
+  "#bfdbfe",
+  "#fbcfe8",
+  "#c4b5fd",
+  "#fed7aa",
+  "#fca5a5",
+];
+
+const DEFAULT_COLOUR = "#ffffff";
+
+const resolveColour = (col: string): string =>
+  ALLOWED_COLOURS.includes(col) ? col : DEFAULT_COLOUR;
 
 interface NoteCardProps {
   note: Note;
@@ -39,6 +46,8 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
   const { mutate: deleteNote, isPending: isDeleting } = useDeleteNote();
   const { mutate: togglePin, isPending: isPinning } = useTogglePin();
   const isLoading = isDeleting || isPinning;
+
+  const bgColour = resolveColour(note.colour);
 
   useEffect(() => {
     if (!showMenu) return;
@@ -85,23 +94,24 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
       />
 
       <div
-        className={`rounded-xl shadow-md hover:shadow-lg transition-shadow p-4 relative group animate-fade-in ${getColourClass(note.colour)}`}
+        style={{ backgroundColor: bgColour }}
+        className="rounded-xl shadow-md hover:shadow-lg transition-shadow p-4 relative group animate-fade-in border border-gray-200"
       >
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="inline-block px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">
+          <div className="lg:flex items-center gap-2">
+            <span className="inline-block px-1.5 bg-orange-100 text-orange-700 text-[10px] font-semibold rounded-full">
               {note.status}
             </span>
             {note.is_pinned && (
-              <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">
-                📌 Pinned
+              <span className="flex items-center gap-x-1 px-1.5 bg-yellow-100 text-yellow-700 text-[10px] font-semibold rounded-full">
+                <LuPinOff /> Pinned
               </span>
             )}
           </div>
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+              className="p-1.5 hover:bg-black/5 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
             >
               <FiMoreVertical size={16} className="text-gray-600" />
             </button>
@@ -109,7 +119,10 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
             {showMenu && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-40 animate-fade-in">
                 <button
-                  onClick={() => { onEdit(note); setShowMenu(false); }}
+                  onClick={() => {
+                    onEdit(note);
+                    setShowMenu(false);
+                  }}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 transition-colors"
                 >
                   <FiEdit2 size={16} />
@@ -121,12 +134,17 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
                   disabled={isLoading}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 transition-colors disabled:opacity-50"
                 >
-                  <span className="text-base">{note.is_pinned ? <MdPinEnd /> : <LuPin />}</span>
+                  <span className="text-base">
+                    {note.is_pinned ? <LuPinOff /> : <LuPin />}
+                  </span>
                   <span>{note.is_pinned ? "Unpin" : "Pin"}</span>
                 </button>
 
                 <button
-                  onClick={() => { setShowDeleteConfirm(true); setShowMenu(false); }}
+                  onClick={() => {
+                    setShowDeleteConfirm(true);
+                    setShowMenu(false);
+                  }}
                   disabled={isLoading}
                   className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2 transition-colors border-t border-gray-200 disabled:opacity-50"
                 >
@@ -147,13 +165,13 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
           </p>
         </div>
 
-        <div className="flex lg:items-center lg:flex-row flex-col justify-between text-xs text-gray-500 border-t pt-3 gap-4">
+        <div className="flex lg:items-center lg:flex-row flex-col justify-between text-xs text-gray-500 border-t border-black/5 pt-3 gap-4">
           {note.tags && note.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 lg:w-full">
               {note.tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md line-clamp-1"
+                  className="inline-block px-2 py-1 bg-black/5 text-gray-700 text-xs rounded-md"
                 >
                   {tag}
                 </span>
