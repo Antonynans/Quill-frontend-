@@ -265,7 +265,7 @@ export default function Home() {
           !isFetchingNextPage &&
           !isLoading && (
             <p className="text-center text-gray-400 text-sm py-6">
-              All {totalNotes} notes loaded
+              You are caught up
             </p>
           )}
       </main>
