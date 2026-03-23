@@ -54,10 +54,10 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-orange-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-8 text-center">
+          <div className="bg-orange-600 px-6 py-8 text-center">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
               <FiLock className="text-3xl text-orange-600" />
             </div>

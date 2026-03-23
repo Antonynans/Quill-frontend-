@@ -32,10 +32,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-orange-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-8 text-center">
+          <div className="bg-orange-600 px-6 py-8 text-center">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
               <span className="text-3xl font-bold text-orange-600">Q</span>
             </div>
@@ -48,7 +48,9 @@ export default function LoginPage() {
               <div className="text-6xl">📚</div>
             </div>
 
-            <h2 className="text-2xl font-bold text-center text-slate-800 mb-2">Log In</h2>
+            <h2 className="text-2xl font-bold text-center text-slate-800 mb-2">
+              Log In
+            </h2>
             <p className="text-center text-gray-600 mb-6">
               Welcome back! Please log in to your account.
             </p>
@@ -66,7 +68,10 @@ export default function LoginPage() {
                   Email Address
                 </label>
                 <div className="relative">
-                  <FiMail className="absolute left-4 top-3 text-gray-400" size={20} />
+                  <FiMail
+                    className="absolute left-4 top-3 text-gray-400"
+                    size={20}
+                  />
                   <input
                     type="email"
                     value={email}
@@ -82,7 +87,10 @@ export default function LoginPage() {
                   Password
                 </label>
                 <div className="relative">
-                  <FiLock className="absolute left-4 top-3 text-gray-400" size={20} />
+                  <FiLock
+                    className="absolute left-4 top-3 text-gray-400"
+                    size={20}
+                  />
                   <input
                     type="password"
                     value={password}
@@ -110,13 +118,19 @@ export default function LoginPage() {
 
             <div className="text-center space-y-2">
               <div className="flex justify-center">
-                <Link href="/auth/forgot-password" className="text-sm text-orange-600 hover:text-orange-700 block">
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-sm text-orange-600 hover:text-orange-700 block"
+                >
                   Forgot Password?
                 </Link>
               </div>
               <p className="text-sm text-gray-600">
                 Not registered?{" "}
-                <Link href="/auth/signup" className="text-orange-600 font-bold hover:text-orange-700">
+                <Link
+                  href="/auth/signup"
+                  className="text-orange-600 font-bold hover:text-orange-700"
+                >
                   Sign up here
                 </Link>
               </p>

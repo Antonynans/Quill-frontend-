@@ -175,7 +175,7 @@ export default function ProfileSettingsPage() {
 
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <LuLoader className="w-8 h-8 animate-spin text-slate-400 mx-auto mb-4" />
           <p className="text-slate-600">Loading profile...</p>
@@ -186,7 +186,7 @@ export default function ProfileSettingsPage() {
 
   if (!displayUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <LuAlertCircle className="w-8 h-8 text-red-600 mx-auto mb-4" />
           <p className="text-slate-600">Failed to load profile</p>
@@ -247,7 +247,7 @@ export default function ProfileSettingsPage() {
                     </h2>
                     <div className="flex items-center gap-6">
                       <div className="relative group">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <div className="w-20 h-20 rounded-full bg-orange-600 flex items-center justify-center overflow-hidden flex-shrink-0">
                           {displayUser.avatar_url ? (
                             <img
                               src={displayUser.avatar_url}

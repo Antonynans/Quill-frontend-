@@ -111,10 +111,10 @@ export function Header({ onTrashClick }: HeaderProps) {
               {profileMenuOpen && (
                 <div className="hidden md:block absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-10 animate-fade-in text-gray-800">
                   <div className="px-4 py-3 border-b border-gray-200">
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
                       {user?.full_name || "User"}
                     </p>
-                    <p className="text-xs text-gray-600">{user?.email}</p>
+                    <p className="text-xs text-gray-600 truncate">{user?.email}</p>
                   </div>
 
                   <button
