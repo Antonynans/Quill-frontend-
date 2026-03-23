@@ -7,28 +7,32 @@ import { FiX } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { formatDistanceToNow } from "date-fns";
 
-const getColourClass = (col: string) => {
-  const colourMap: Record<string, string> = {
-    red: "bg-red-100 text-red-900 border border-red-300",
-    orange: "bg-orange-100 text-orange-900 border border-orange-300",
-    yellow: "bg-yellow-100 text-yellow-900 border border-yellow-300",
-    green: "bg-green-100 text-green-900 border border-green-300",
-    blue: "bg-blue-100 text-blue-900 border border-blue-300",
-    pink: "bg-pink-100 text-pink-900 border border-pink-300",
-    cyan: "bg-cyan-100 text-cyan-900 border border-cyan-300",
-    slate: "bg-slate-100 text-slate-900 border border-slate-300",
-  };
-  return colourMap[col] || "bg-gray-100 text-gray-900 border border-gray-300";
-};
+const ALLOWED_COLOURS = [
+  "#ffffff",
+  "#fef9c3",
+  "#fefce8",
+  "#dcfce7",
+  "#dbeafe",
+  "#fce7f3",
+  "#ffedd5",
+  "#fde68a",
+  "#a7f3d0",
+  "#bfdbfe",
+  "#fbcfe8",
+  "#c4b5fd",
+  "#fed7aa",
+  "#fca5a5",
+];
+const DEFAULT_COLOUR = "#ffffff";
 
 const getNowLocal = () => {
   const now = new Date();
   const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const MM = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
   const hh = String(now.getHours()).padStart(2, "0");
-  const min = String(now.getMinutes()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
 };
 
 interface NoteModalProps {
@@ -43,7 +47,7 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [colour, setColour] = useState("white");
+  const [colour, setColour] = useState(DEFAULT_COLOUR);
   const [reminderAt, setReminderAt] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -55,13 +59,16 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
       setTitle(note.title);
       setDescription(note.description ?? "");
       setSelectedTags(note.tags || []);
-      setColour(note.colour || "white");
+      const noteColour = note.colour ?? DEFAULT_COLOUR;
+      setColour(
+        ALLOWED_COLOURS.includes(noteColour) ? noteColour : DEFAULT_COLOUR,
+      );
       setReminderAt(note.reminder_at || "");
     } else {
       setTitle("");
       setDescription("");
       setSelectedTags([]);
-      setColour("white");
+      setColour(DEFAULT_COLOUR);
       setReminderAt("");
     }
   }, [note, isOpen]);
@@ -79,8 +86,10 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
     if (JSON.stringify(selectedTags) !== JSON.stringify(note.tags || []))
       payload.tags = selectedTags.length > 0 ? selectedTags : [];
 
-    if (colour !== (note.colour || "white"))
-      payload.colour = colour !== "white" ? colour : undefined;
+    const originalColour = ALLOWED_COLOURS.includes(note.colour ?? "")
+      ? note.colour
+      : DEFAULT_COLOUR;
+    if (colour !== originalColour) payload.colour = colour;
 
     if (reminderAt !== (note.reminder_at || ""))
       payload.reminder_at = reminderAt || undefined;
@@ -113,7 +122,7 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
         title,
         description,
         tags: selectedTags.length > 0 ? selectedTags : undefined,
-        colour: colour !== "white" ? colour : undefined,
+        colour: colour !== DEFAULT_COLOUR ? colour : undefined,
         reminder_at: reminderAt || undefined,
       };
       await createNote(payload);
@@ -231,31 +240,27 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Colour
+              Theme
             </label>
-            <div className="grid grid-cols-6 gap-3">
-              {[
-                "red",
-                "orange",
-                "yellow",
-                "green",
-                "blue",
-                "pink",
-                "cyan",
-                "slate",
-              ].map((col) => (
+            <div className="flex gap-3 overflow-auto">
+              {ALLOWED_COLOURS.map((hex) => (
                 <button
-                  key={col}
+                  key={hex}
                   type="button"
-                  onClick={() => setColour(col)}
-                  className={`h-12 rounded-lg font-semibold text-sm transition-all ${
-                    colour === col
-                      ? "ring-2 ring-offset-2 ring-gray-400 scale-105"
-                      : "hover:scale-105"
-                  } ${getColourClass(col)}`}
-                  title={col}
+                  onClick={() => setColour(hex)}
+                  title={hex}
+                  style={{ backgroundColor: hex }}
+                  className={`w-7 h-7 rounded-full border-2 transition-all flex-shrink-0 flex items-center justify-center ${
+                    colour === hex
+                      ? "scale-110 shadow-md"
+                      : " hover:scale-110 hover:border-gray-200"
+                  }`}
                 >
-                  {colour === col && "✓"}
+                  {colour === hex && (
+                    <span className="text-gray-600 text-xs font-bold leading-none">
+                      ✓
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -309,9 +314,8 @@ export function NoteModal({ note, isOpen, onClose, mode }: NoteModalProps) {
                 disabled={isSaving}
                 className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50"
               >
-                {isSaving ? "Saving..." : "Cancel"}
+                Cancel
               </button>
-
               <button
                 type="submit"
                 disabled={isCreating}
