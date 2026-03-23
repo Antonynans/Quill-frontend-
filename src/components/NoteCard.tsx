@@ -7,6 +7,8 @@ import { useState, useEffect, useRef } from "react";
 import { useDeleteNote, useTogglePin } from "@/hooks/useNotes";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { toast } from "react-toastify";
+import { LuPin } from "react-icons/lu";
+import { MdPinEnd } from "react-icons/md";
 
 const getColourClass = (col: string) => {
   const colourMap: Record<string, string> = {
@@ -119,7 +121,7 @@ export function NoteCard({ note, onEdit, onView }: NoteCardProps) {
                   disabled={isLoading}
                   className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 transition-colors disabled:opacity-50"
                 >
-                  <span className="text-base">{note.is_pinned ? "📌" : "📍"}</span>
+                  <span className="text-base">{note.is_pinned ? <MdPinEnd /> : <LuPin />}</span>
                   <span>{note.is_pinned ? "Unpin" : "Pin"}</span>
                 </button>
 
