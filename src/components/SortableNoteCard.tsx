@@ -10,14 +10,12 @@ interface SortableNoteCardProps {
   note: Note;
   onEdit: (note: Note) => void;
   onView: (note: Note) => void;
-  onNotesChange?: () => void;
 }
 
 export function SortableNoteCard({
   note,
   onEdit,
   onView,
-  onNotesChange,
 }: SortableNoteCardProps) {
   const {
     attributes,
@@ -50,7 +48,6 @@ export function SortableNoteCard({
         note={note}
         onEdit={onEdit}
         onView={onView}
-        onNotesChange={onNotesChange}
       />
     </div>
   );
