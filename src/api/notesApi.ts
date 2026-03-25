@@ -1,6 +1,5 @@
-import axios from "axios";
+import { apiClient } from "@/lib/apiClient";
 import { Note, CreateNotePayload, UpdateNotePayload } from "@/types";
-import { API_URL } from "@/store/constant";
 
 export interface PaginatedNotes {
   items: Note[];
@@ -15,68 +14,68 @@ export const notesApi = {
     params: { page?: number; search?: string } = {},
   ): Promise<PaginatedNotes> => {
     const { page = 1, search = "" } = params;
-    const response = await axios.get(`${API_URL}/api/notes`, {
+    const response = await apiClient.get<PaginatedNotes>("/api/notes", {
       params: { page, page_size: 12, ...(search ? { search } : {}) },
     });
-    return response.data;
+    return response;
   },
 
   fetchTrash: async (): Promise<PaginatedNotes> => {
-    const response = await axios.get(`${API_URL}/api/notes/trash`, {
+    const response = await apiClient.get<PaginatedNotes>("/api/notes/trash", {
       params: { page: 1, page_size: 50 },
     });
-    return response.data;
+    return response;
   },
 
   createNote: async (payload: CreateNotePayload): Promise<Note> => {
-    const response = await axios.post(`${API_URL}/api/notes`, payload);
-    return response.data;
+    const response = await apiClient.post<Note>("/api/notes", payload);
+    return response;
   },
 
   updateNote: async (id: number, payload: UpdateNotePayload): Promise<Note> => {
-    const response = await axios.patch(`${API_URL}/api/notes/${id}`, payload);
-    return response.data;
+    const response = await apiClient.patch<Note>(`/api/notes/${id}`, payload);
+    return response;
   },
 
   deleteNote: async (id: number): Promise<void> => {
-    await axios.delete(`${API_URL}/api/notes/${id}`);
+    await apiClient.delete(`/api/notes/${id}`);
   },
 
   permanentDeleteNote: async (id: number): Promise<void> => {
-    await axios.delete(`${API_URL}/api/notes/${id}/permanent`);
+    await apiClient.delete(`/api/notes/${id}/permanent`);
   },
 
   restoreNote: async (id: number): Promise<Note> => {
-    const response = await axios.post(`${API_URL}/api/notes/${id}/restore`);
-    return response.data;
+    const response = await apiClient.post<Note>(`/api/notes/${id}/restore`);
+    return response;
   },
 
   togglePin: async (id: number): Promise<Note> => {
-    const response = await axios.post(`${API_URL}/api/notes/${id}/pin`);
-    return response.data;
+    const response = await apiClient.post<Note>(`/api/notes/${id}/pin`);
+    return response;
   },
 
   lockNote: async (id: number, lockPassword?: string): Promise<Note> => {
-    const response = await axios.post(`${API_URL}/api/notes/${id}/lock`, {
+    const response = await apiClient.post<Note>(`/api/notes/${id}/lock`, {
       lock_password: lockPassword,
     });
-    return response.data;
+    return response;
   },
 
   unlockNote: async (id: number, lockPassword: string): Promise<Note> => {
-    const response = await axios.post(`${API_URL}/api/notes/${id}/unlock`, {
+    const response = await apiClient.post<Note>(`/api/notes/${id}/unlock`, {
       lock_password: lockPassword,
     });
-    return response.data;
+    return response;
   },
 
   shareNote: async (id: number): Promise<Note> => {
-    const response = await axios.post(`${API_URL}/api/notes/${id}/share`);
-    return response.data;
+    const response = await apiClient.post<Note>(`/api/notes/${id}/share`);
+    return response;
   },
 
   unshareNote: async (id: number): Promise<Note> => {
-    const response = await axios.post(`${API_URL}/api/notes/${id}/unshare`);
-    return response.data;
+    const response = await apiClient.post<Note>(`/api/notes/${id}/unshare`);
+    return response;
   },
 };
