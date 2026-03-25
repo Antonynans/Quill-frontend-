@@ -21,9 +21,8 @@ export function Header({ onTrashClick }: HeaderProps) {
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const handleLogoutConfirm = () => {
-    logout();
+    logout.mutate();
     setShowLogoutConfirm(false);
-    router.push("/auth/login");
   };
 
   useEffect(() => {
@@ -114,7 +113,9 @@ export function Header({ onTrashClick }: HeaderProps) {
                     <p className="text-sm font-semibold text-gray-900 truncate">
                       {user?.full_name || "User"}
                     </p>
-                    <p className="text-xs text-gray-600 truncate">{user?.email}</p>
+                    <p className="text-xs text-gray-600 truncate">
+                      {user?.email}
+                    </p>
                   </div>
 
                   <button
