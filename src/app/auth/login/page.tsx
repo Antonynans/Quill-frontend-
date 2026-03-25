@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useLogin } from "@/hooks/useAuth";
+import { getErrorMessage } from "@/lib/auth";
 import Link from "next/link";
 import { FiMail, FiLock, FiAlertCircle } from "react-icons/fi";
 
-export default function LoginPage() {
-  const router = useRouter();
+export default function LoginForm() {
   const { mutateAsync: login, isPending } = useLogin();
 
   const [email, setEmail] = useState("");
@@ -25,9 +24,8 @@ export default function LoginPage() {
 
     try {
       await login({ email, password });
-      router.push("/");
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Login failed. Please try again.");
+      setError(getErrorMessage(err));
     }
   };
 
@@ -78,6 +76,7 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    disabled={isPending}
                   />
                 </div>
               </div>
@@ -97,6 +96,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    disabled={isPending}
                   />
                 </div>
               </div>
@@ -111,20 +111,18 @@ export default function LoginPage() {
             </form>
 
             <div className="my-6 flex items-center gap-3">
-              <div className="flex-1 h-px bg-gray-300"></div>
+              <div className="flex-1 h-px bg-gray-300" />
               <span className="text-sm text-gray-500">or</span>
-              <div className="flex-1 h-px bg-gray-300"></div>
+              <div className="flex-1 h-px bg-gray-300" />
             </div>
 
             <div className="text-center space-y-2">
-              <div className="flex justify-center">
-                <Link
-                  href="/auth/forgot-password"
-                  className="text-sm text-orange-600 hover:text-orange-700 block"
-                >
-                  Forgot Password?
-                </Link>
-              </div>
+              <Link
+                href="/auth/forgot-password"
+                className="text-sm text-orange-600 hover:text-orange-700 block"
+              >
+                Forgot Password?
+              </Link>
               <p className="text-sm text-gray-600">
                 Not registered?{" "}
                 <Link
