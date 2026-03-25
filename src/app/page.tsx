@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { useNotes, useReorderNotes } from "@/hooks/useNotes";
 import { Header } from "@/components/Header";
-import { NoteModal } from "@/components/NoteModal";
-import { TrashModal } from "@/components/TrashModal";
 import { SortableNoteCard } from "@/components/SortableNoteCard";
 import { SearchBar } from "@/components/Searchbar";
+import { NoteCardSkeleton } from "@/components/Skeletons";
 import { Note } from "@/types";
 import { FiPlus } from "react-icons/fi";
 import {
@@ -28,6 +34,27 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { NoteCard } from "@/components/NoteCard";
+
+const NoteModal = lazy(() =>
+  import("@/components/NoteModal").then((m) => ({ default: m.NoteModal })),
+);
+const TrashModal = lazy(() =>
+  import("@/components/TrashModal").then((m) => ({ default: m.TrashModal })),
+);
+
+const NEXT_PAGE_SKELETON_COUNT = 3;
+
+function NoteGridSkeleton({ count }: { count: number }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="break-inside-avoid-column mb-4">
+          <NoteCardSkeleton />
+        </div>
+      ))}
+    </>
+  );
+}
 
 export default function Home() {
   const { token } = useAuthStore();
@@ -136,9 +163,7 @@ export default function Home() {
     if (oldIndex === -1 || newIndex === -1) return;
 
     const reordered = arrayMove(localNotes, oldIndex, newIndex);
-
     setLocalNotes(reordered);
-
     isSavingOrderRef.current = true;
 
     try {
@@ -180,10 +205,8 @@ export default function Home() {
         <SearchBar />
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-pulse text-gray-500 text-lg">
-              Loading notes...
-            </div>
+          <div className="columns-2 lg:columns-3 gap-4 mt-8">
+            <NoteGridSkeleton count={6} />
           </div>
         ) : isError ? (
           <div className="text-center py-12 text-red-500">
@@ -224,7 +247,7 @@ export default function Home() {
                 {localNotes.map((note, index) => (
                   <div
                     key={note.id}
-                    style={{ animationDelay: `${index * 50}ms` }}
+                    style={{ animationDelay: `${index * 40}ms` }}
                     className="animate-slide-in break-inside-avoid-column mb-4"
                   >
                     <SortableNoteCard
@@ -235,6 +258,10 @@ export default function Home() {
                   </div>
                 ))}
               </SortableContext>
+
+              {isFetchingNextPage && (
+                <NoteGridSkeleton count={NEXT_PAGE_SKELETON_COUNT} />
+              )}
             </div>
 
             <DragOverlay zIndex={1}>
@@ -251,15 +278,6 @@ export default function Home() {
 
         <div ref={sentinelRef} className="h-4 mt-4" />
 
-        {isFetchingNextPage && (
-          <div className="flex justify-center py-6">
-            <div className="flex items-center gap-2 text-gray-500 text-sm">
-              <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-              Loading more notes...
-            </div>
-          </div>
-        )}
-
         {!hasNextPage &&
           localNotes.length > 0 &&
           !isFetchingNextPage &&
@@ -270,18 +288,29 @@ export default function Home() {
           )}
       </main>
 
-      <NoteModal
-        note={selectedNote}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedNote(null);
-        }}
-        mode={modalMode}
-        onNotesChange={() => {}}
-      />
+      <Suspense fallback={null}>
+        {isModalOpen && (
+          <NoteModal
+            note={selectedNote}
+            isOpen={isModalOpen}
+            onClose={() => {
+              setIsModalOpen(false);
+              setSelectedNote(null);
+            }}
+            mode={modalMode}
+            onNotesChange={() => {}}
+          />
+        )}
+      </Suspense>
 
-      <TrashModal isOpen={isTrashOpen} onClose={() => setIsTrashOpen(false)} />
+      <Suspense fallback={null}>
+        {isTrashOpen && (
+          <TrashModal
+            isOpen={isTrashOpen}
+            onClose={() => setIsTrashOpen(false)}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }
