@@ -6,6 +6,7 @@ import {
   InfiniteData,
 } from "@tanstack/react-query";
 import { notesApi, PaginatedNotes } from "@/api/notesApi";
+import { useAuthStore } from "@/store/authStore";
 import { Note, CreateNotePayload, UpdateNotePayload } from "@/types";
 import { toast } from "react-toastify";
 
@@ -31,6 +32,8 @@ function patchNoteInPages(
 }
 
 export function useNotes(search: string = "") {
+  const { token } = useAuthStore();
+
   return useInfiniteQuery({
     queryKey: noteKeys.list(search),
     queryFn: ({ pageParam = 1 }) =>
@@ -38,14 +41,17 @@ export function useNotes(search: string = "") {
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined,
     initialPageParam: 1,
-    enabled: true,
+    enabled: !!token,
   });
 }
 
 export function useTrash() {
+  const { token } = useAuthStore();
+
   return useQuery({
     queryKey: noteKeys.trash(),
     queryFn: notesApi.fetchTrash,
+    enabled: !!token,
   });
 }
 
