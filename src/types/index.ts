@@ -50,7 +50,26 @@ export interface ApiError {
 
 export interface AuthError extends Error {
   status: number;
-  code: 'INVALID_CREDENTIALS' | 'EMAIL_ALREADY_EXISTS' | 'TOKEN_EXPIRED' | 'UNAUTHORIZED' | 'UNKNOWN';
+  code:
+    | "INVALID_CREDENTIALS"
+    | "EMAIL_ALREADY_EXISTS"
+    | "TOKEN_EXPIRED"
+    | "UNAUTHORIZED"
+    | "UNKNOWN";
+}
+
+/**
+ * Session Types
+ */
+export interface UserSession {
+  id: number;
+  device_name: string;
+  device_type: string;
+  ip_address: string;
+  user_agent: string;
+  is_active: boolean;
+  last_used_at: string | null;
+  created_at: string;
 }
 
 /**
