@@ -1,6 +1,11 @@
 # Quill - Frontend
 
 A beautiful, modern note-taking application for developers built with Next.js, TypeScript, and Tailwind CSS.
+---
+## 🌍 Live Demo
+[![Live Demo](https://img.shields.io/badge/Live-Demo-green?style=for-the-badge&logo=vercel)](https://quillnote.netlify.app/)
+[![API Docs](https://img.shields.io/badge/API-Swagger-blue?style=for-the-badge&logo=swagger)](https://noteapp-backend-c60c.onrender.com/docs)
+[![Backend Repo](https://img.shields.io/badge/Backend-Repository-black?style=for-the-badge&logo=github)](https://github.com/Antonynans/Noteapp-backend)
 
 ## Tech Stack
 
