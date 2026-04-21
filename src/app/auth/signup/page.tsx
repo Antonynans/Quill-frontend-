@@ -38,8 +38,8 @@ export default function SignupPage() {
     try {
       await signup({ email, password, fullName });
       router.push("/auth/verify-email");
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Signup failed. Please try again.");
+    } catch (err: any) {      
+      setError(err.message || "Signup failed. Please try again.");
     }
   };
 

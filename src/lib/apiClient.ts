@@ -97,7 +97,7 @@ class ApiClient {
       apiError.detail || apiError.message,
     ) as AuthError;
     authError.status = apiError.status;
-    authError.code = code;
+    authError.code = code;    
     return authError;
   }
 
